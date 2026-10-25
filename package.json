@@ -1,0 +1,8 @@
+{
+  "name": "alpine-drift-3d-environment",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {"test": "node tests/verify.mjs", "stats": "node tests/stats.mjs", "serve": "npx http-server -c-1 ."},
+  "devDependencies": {"three": "0.160.0"}
+}
