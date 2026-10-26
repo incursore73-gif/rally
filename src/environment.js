@@ -4,6 +4,7 @@ import {createMaterials} from './materials.js';
 import {createNatural,createTerrain} from './terrain.js';
 import {createRoad,buildRoadMeshes,buildFurniture} from './road.js';
 import {buildVegetation} from './vegetation.js';
+import {THEMES} from './themes.js';
 // Fasce orarie: [ora, cielo alto, orizzonte, nebbia, sole, intensità sole, intensità emisferica]
 const KEYS=[[0,'#03060d','#10182a','#0c1220','#8899cc',.08,.3],[5.5,'#3c4f7c','#e9a46e','#c9a58c','#ff9a55',.6,.5],[8,'#5b8fd6','#c4dcf0','#b6cde0','#ffe2b8',1.1,.85],
   [12,'#3f7fd8','#bcd8f2','#a9c4de','#fff6e6',1.3,.95],[17,'#4f86d0','#cfe0ee','#bccfdf','#ffe9c9',1.15,.9],[19.2,'#3a4a78','#f0a05e','#d19a82','#ff8a45',.7,.5],[21.5,'#03060d','#10182a','#0c1220','#8899cc',.08,.3],[24,'#03060d','#10182a','#0c1220','#8899cc',.08,.3]];
@@ -21,14 +22,16 @@ export function createEnvironment(scene,renderer,userCfg={}){
   scene.add(sky,sun,sun.target,hemi,sunTarget);scene.fog=new THREE.Fog(0xaec6dc,80,preset.fogFar);
   const GRAY=new THREE.Color('#8a939c');
   function applyLighting(){const p=palette(hour),el=Math.asin(Math.sin((hour-6)/12*Math.PI)*.92),az=2.2;
+    {const th=THEMES[cfg.theme]||THEMES.alpine;if(th.tint){const c=new THREE.Color(th.tint.c);p.hor.lerp(c,th.tint.k);p.fog.lerp(c,th.tint.k);p.top.lerp(c,th.tint.k*.35)}}
     if(rain){p.top.lerp(GRAY,.65);p.hor.lerp(GRAY,.55);p.fog.lerp(GRAY,.6);p.sunI*=.45;p.hemi*=.85}
     sunDir.set(Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)).normalize();
     sky.material.uniforms.top.value.copy(p.top);sky.material.uniforms.hor.value.copy(p.hor);sky.material.uniforms.sunCol.value.copy(p.sun);sky.material.uniforms.sunDir.value.copy(sunDir);
-    sun.color.copy(p.sun);sun.intensity=el>0?p.sunI*sunScale:p.sunI*sunScale*.2;hemi.intensity=p.hemi;scene.fog.color.copy(p.fog);scene.fog.far=rain?Math.min(preset.fogFar,1500):preset.fogFar;scene.fog.near=rain?30:80;scene.background=p.hor.clone();
+    sun.color.copy(p.sun);sun.intensity=el>0?p.sunI*sunScale:p.sunI*sunScale*.2;hemi.intensity=p.hemi;scene.fog.color.copy(p.fog);{const ff=preset.fogFar*((THEMES[cfg.theme]||THEMES.alpine).fogK||1);scene.fog.far=rain?Math.min(ff,1500):ff}scene.fog.near=rain?30:80;scene.background=p.hor.clone();
     renderer.shadowMap.enabled=preset.shadows&&shadowsOn;sun.castShadow=preset.shadows&&shadowsOn&&el>.05;if(sun.castShadow){sun.shadow.mapSize.set(preset.shadowMap,preset.shadowMap);const c=sun.shadow.camera;c.left=c.bottom=-110;c.right=c.top=110;c.near=10;c.far=1100;sun.shadow.bias=-.0006;sun.shadow.normalBias=.4}}
   function clear(){if(content){scene.remove(content);disposeTree(content);content=null}if(M){M.dispose();M=null}}
-  function build(){clear();const t0=performance.now(),natural=createNatural(cfg),road=createRoad(cfg,natural),terrain=createTerrain(cfg,natural,road,preset);M=createMaterials(preset,cfg.textures||{},cfg.road.surface);
-    const g=new THREE.Group();g.add(terrain.build(M),buildRoadMeshes(road,M));const furn=buildFurniture(road,terrain.heightAt,M,cfg),veg=buildVegetation(cfg,preset,terrain,road,M);g.add(furn.group,veg.group);
+  function build(){clear();const t0=performance.now(),th=THEMES[cfg.theme]||THEMES.alpine,E={...cfg,themeDef:th,road:{...(th.road||{}),...cfg.road}},natural=createNatural(E),road=createRoad(E,natural),terrain=createTerrain(E,natural,road,preset);M=createMaterials(preset,cfg.textures||{},cfg.road.surface);M.rock.color.set(th.rock);
+    const g=new THREE.Group();g.add(terrain.build(M),buildRoadMeshes(road,M));
+    if(terrain.seaY!=null){const sm=new THREE.Mesh(new THREE.PlaneGeometry(9000,9000),preset.lambert?new THREE.MeshLambertMaterial({color:0x2d7aa0}):new THREE.MeshStandardMaterial({color:0x2d7aa0,roughness:.22,metalness:.15,transparent:true,opacity:.93}));sm.rotation.x=-Math.PI/2;sm.position.set(0,terrain.seaY,-800);g.add(sm)}const furn=buildFurniture(road,terrain.heightAt,M,E),veg=buildVegetation(E,preset,terrain,road,M);g.add(furn.group,veg.group);
     scene.add(g);content=g;state={natural,road,terrain,furn,veg,buildMs:performance.now()-t0};renderer.setPixelRatio(Math.min(preset.pixelRatio,window.devicePixelRatio||1));applyLighting()}
   build();
   const lane=()=>state.road.hw*.5;

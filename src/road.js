@@ -17,13 +17,18 @@ function layout(rc,rnd){
   }
   return P;
 }
+// Percorso sinuoso: avanza verso -z con curve dolci/medie (nessun tornante), sempre in avanti => mai attraversamenti.
+function layoutMeander(rc,rnd){const P=[],cx=rc.cx||0,half=rc.xHalf||150,step=rc.step||40,cap=rc.maxTurn||.6;let p={x:cx,y:0},ang=-Math.PI/2+(rnd()-.5)*.3,turn=0;P.push({...p});
+  for(let i=0,n=Math.round(rc.length/step);i<n;i++){turn=turn*.8+(rnd()-.5)*(rc.wild||.5);const want=-Math.PI/2+Math.max(-1,Math.min(1,(cx-p.x)/half))*.9;
+    let da=turn+(want-ang)*.22;da=Math.max(-cap,Math.min(cap,da));ang=Math.max(-Math.PI+.6,Math.min(-.6,ang+da));p={x:p.x+Math.cos(ang)*step,y:p.y+Math.sin(ang)*step};P.push({...p})}
+  return P}
 const smooth=(a,w)=>{const n=a.length,o=new Float32Array(n),pre=new Float64Array(n+1);for(let i=0;i<n;i++)pre[i+1]=pre[i]+a[i];
   for(let i=0;i<n;i++){const l=Math.max(0,i-w),r=Math.min(n-1,i+w);o[i]=(pre[r+1]-pre[l])/(r-l+1)}return o};
 
 export function createRoad(cfg,natural){
   const rc=cfg.road,hw=rc.width/2,sh=rc.shoulder;let pts,attempt=0;
   for(;;attempt++){
-    pts=new THREE.CatmullRomCurve3(layout(rc,mulberry32(cfg.seed*7919+attempt*104729)).map(p=>new THREE.Vector3(p.x,0,p.y)),false,'centripetal');
+    pts=new THREE.CatmullRomCurve3((rc.style==='meander'?layoutMeander:layout)(rc,mulberry32(cfg.seed*7919+attempt*104729)).map(p=>new THREE.Vector3(p.x,0,p.y)),false,'centripetal');
     pts.arcLengthDivisions=8000;pts.updateArcLengths();const sm=pts.getSpacedPoints(Math.round(pts.getLength()/rc.sampleStep)),need=2*(hw+sh)+3;let ok=true;
     for(let i=0;i<sm.length&&ok;i+=3)for(let j=i+25;j<sm.length;j+=3)if(Math.hypot(sm[i].x-sm[j].x,sm[i].z-sm[j].z)<need){ok=false;break}
     if(ok||attempt>40){pts=sm;break}

@@ -14,23 +14,23 @@ const SURF={gravel:{G:800,d:22,road:"#a58b68",edge:"#7d6849",verge:"#4a5a35",rut
  tarmac:{G:1250,d:0,road:"#3c4047",edge:"#2c2f34",verge:"#46603a",rut:"rgba(0,0,0,.2)",dust:"#e8e8e8",skid:"rgba(0,0,0,.5)"},
  snow:{G:520,d:14,road:"#dde7f0",edge:"#aebccb",verge:"#f4f8fc",rut:"rgba(120,140,165,.35)",dust:"#ffffff",skid:"rgba(110,130,155,.5)"}};
 const ST=[
- {n:"Passo alpino",srf:"tarmac",seed:41,len:18000,hw:100,sm:200,sv:520,alp:{h:8,hr:15.5,rn:0},mix:{hair:3,vh:2,c90:3,sweep:3,chic:2,kink:2}},
- {n:"Gola del torrente",srf:"gravel",seed:47,len:19000,hw:100,sm:200,sv:520,alp:{h:7,hr:17.5,rn:1},mix:{hair:3,vh:3,c90:3,sweep:2,chic:3,kink:1}},
- {n:"Cresta del monte",srf:"gravel",seed:53,len:18000,hw:100,sm:200,sv:520,alp:{h:9,hr:12,rn:0},mix:{hair:4,vh:2,c90:2,sweep:4,chic:2,kink:2}},
- {n:"Tornanti del colle",srf:"gravel",seed:59,len:20000,hw:100,sm:180,sv:450,alp:{h:10,hr:17.5,rn:1},mix:{hair:6,vh:3,c90:2,sweep:1,chic:1,kink:1}},
- {n:"Strada delle scicane",srf:"tarmac",seed:61,len:21000,hw:100,sm:300,sv:520,alp:{h:7,hr:10,rn:0},mix:{hair:2,vh:2,c90:3,sweep:3,chic:4,kink:2}},
- {n:"Gran passo",srf:"gravel",seed:67,len:28000,hw:100,sm:240,sv:520,alp:{h:11,hr:16.2,rn:0},mix:{hair:4,vh:3,c90:3,sweep:3,chic:3,kink:2}},
- {n:"Salita dell'abbazia",srf:"tarmac",seed:71,len:19000,hw:100,sm:200,sv:500,alp:{h:8,hr:14,rn:1},mix:{hair:4,vh:2,c90:3,sweep:3,chic:2,kink:2}},
- {n:"Discesa del lago",srf:"tarmac",seed:73,len:22000,hw:100,sm:220,sv:520,alp:{h:8,hr:17,rn:0},mix:{sweep:5,c90:3,hair:2,vh:2,chic:3,kink:3}},
- {n:"Gola di pietra",srf:"tarmac",seed:79,len:20000,hw:100,sm:180,sv:450,alp:{h:9,hr:9,rn:1},mix:{vh:4,c90:4,hair:3,chic:4,sweep:1,kink:1}},
- {n:"Panoramica alta",srf:"tarmac",seed:83,len:26000,hw:100,sm:220,sv:520,alp:{h:10,hr:20.2,rn:0},mix:{hair:4,vh:3,c90:3,sweep:4,chic:3,kink:2}}];
+ {n:"Passo alpino",srf:"tarmac",seed:41,len:18000,hw:100,sm:200,sv:520,alp:{h:8,hr:15.5,rn:0,th:"alpine",len:0},mix:{hair:3,vh:2,c90:3,sweep:3,chic:2,kink:2}},
+ {n:"Foresta del nord",srf:"gravel",seed:47,len:19000,hw:100,sm:200,sv:520,alp:{h:8,hr:11,rn:1,th:"forest",len:2300},mix:{hair:3,vh:3,c90:3,sweep:2,chic:3,kink:1}},
+ {n:"Gola rossa",srf:"gravel",seed:53,len:18000,hw:100,sm:200,sv:520,alp:{h:8,hr:16,rn:0,th:"canyon",len:2100},mix:{hair:4,vh:2,c90:2,sweep:4,chic:2,kink:2}},
+ {n:"Colline d'autunno",srf:"gravel",seed:59,len:20000,hw:100,sm:180,sv:450,alp:{h:8,hr:17.2,rn:1,th:"autumn",len:2400},mix:{hair:6,vh:3,c90:2,sweep:1,chic:1,kink:1}},
+ {n:"Costa a strapiombo",srf:"tarmac",seed:61,len:21000,hw:100,sm:300,sv:520,alp:{h:8,hr:14,rn:0,th:"coast",len:2500},mix:{hair:2,vh:2,c90:3,sweep:3,chic:4,kink:2}},
+ {n:"Gran passo",srf:"gravel",seed:67,len:28000,hw:100,sm:240,sv:520,alp:{h:11,hr:16.2,rn:0,th:"alpine",len:0},mix:{hair:4,vh:3,c90:3,sweep:3,chic:3,kink:2}},
+ {n:"Bosco dell'abbazia",srf:"tarmac",seed:71,len:19000,hw:100,sm:200,sv:500,alp:{h:8,hr:12.5,rn:1,th:"forest",len:2300},mix:{hair:4,vh:2,c90:3,sweep:3,chic:2,kink:2}},
+ {n:"Tramonto sul mare",srf:"tarmac",seed:73,len:22000,hw:100,sm:220,sv:520,alp:{h:8,hr:17.4,rn:0,th:"coast",len:2600},mix:{sweep:5,c90:3,hair:2,vh:2,chic:3,kink:3}},
+ {n:"Canyon d'asfalto",srf:"tarmac",seed:79,len:20000,hw:100,sm:180,sv:450,alp:{h:8,hr:9,rn:0,th:"canyon",len:2000},mix:{vh:4,c90:4,hair:3,chic:4,sweep:1,kink:1}},
+ {n:"Panoramica alta",srf:"tarmac",seed:83,len:26000,hw:100,sm:220,sv:520,alp:{h:10,hr:20.2,rn:0,th:"alpine",len:0},mix:{hair:4,vh:3,c90:3,sweep:4,chic:3,kink:2}}];
 const RALLY=[0,1,2,3,4,5];
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 /*GEN*/
 // Tracciato = strada alpina generata da src/environment.js, ricampionata ogni DS unità (1 unità = 0.06 m).
 const wrapA2=a=>Math.atan2(Math.sin(a),Math.cos(a));
 function buildStage(L){
- const U_=.06,hwm=L.hw*U_,cfg={seed:L.seed,road:{surface:L.srf==="gravel"?"gravel":"asphalt",width:hwm*2,shoulder:1.4,hairpins:L.alp.h,radiusMin:15,radiusMax:24,legMin:80,xRange:[-150,150]},render:{preset:SET.quality==="perf"?"PERFORMANCE":"HIGH"}};
+ const U_=.06,hwm=L.hw*U_,cfg={seed:L.seed,theme:L.alp.th,road:Object.assign({surface:L.srf==="gravel"?"gravel":"asphalt",width:hwm*2,shoulder:1.4,hairpins:L.alp.h,radiusMin:15,radiusMax:24,legMin:80,xRange:[-150,150]},L.alp.len?{length:L.alp.len}:{}),render:{preset:SET.quality==="perf"?"PERFORMANCE":"HIGH"}};
  ENVI=ENVI?ENVI.regenerate(cfg):ALPINE.createEnvironment(sc3,R3,cfg);rs3();
  const R=ENVI.road,N=Math.floor(R.length/(DS*U_)),P=[],r=rng(L.seed+991),dm=DS*U_;
  for(let i=0;i<N;i++){const p=ENVI.getRoadPoint(i*dm),h=Math.atan2(p.tangent.z,p.tangent.x);P.push({x:p.position.x/U_,y:p.position.z/U_,h,nx:-Math.sin(h),ny:Math.cos(h)})}
@@ -410,7 +410,7 @@ function rail(){if(!ENVI)return;const R=ENVI.road,X=me.x*U,Z=me.y*U,q=R.nearest(
 /* --- extra: replay TV, medaglie, segnali, audio, adaptive --- */
 function rampLift(idx){for(const j of S.J){const d=j.i-idx;if(d>=0&&d<6.5){const Hr=.55+j.h*.8;return{y:Hr*(1-d/6.5),p:Math.atan2(Hr,7)}}}return{y:0,p:0}}
 let RP=null,rpBtn=null,rpC={j:-1,x:0,y:0,z:0,t:0};
-function medalHTML(tot){const L=S.N*DS*U,v={tarmac:21,gravel:18}[ST[lvl].srf]||19,g=L/v*1000,m=tot<=g?"🥇 Oro":tot<=g*1.12?"🥈 Argento":tot<=g*1.28?"🥉 Bronzo":"";return '<div style="font-size:26px;font-weight:700">'+m+'<span style="font-size:15px;font-weight:500;color:#cfd5c8"> '+(m?"· ":"")+'oro '+fmt(Math.round(g))+' · argento '+fmt(Math.round(g*1.12))+' · bronzo '+fmt(Math.round(g*1.28))+'</span></div>'}
+function medalHTML(tot){const L=S.N*DS*U,v=(ST[lvl].alp.th==="alpine"?{tarmac:21,gravel:18}:{tarmac:28,gravel:25})[ST[lvl].srf]||22,g=L/v*1000,m=tot<=g?"🥇 Oro":tot<=g*1.12?"🥈 Argento":tot<=g*1.28?"🥉 Bronzo":"";return '<div style="font-size:26px;font-weight:700">'+m+'<span style="font-size:15px;font-weight:500;color:#cfd5c8"> '+(m?"· ":"")+'oro '+fmt(Math.round(g))+' · argento '+fmt(Math.round(g*1.12))+' · bronzo '+fmt(Math.round(g*1.28))+'</span></div>'}
 function startReplay(){if(!rec||rec.length<10)return;$("#res").classList.add("hide");RP={t:0,i:0};
  if(!rpBtn){rpBtn=document.createElement("button");rpBtn.id="rpb";rpBtn.textContent="⏹ Esci dal replay";rpBtn.style.cssText="position:fixed;bottom:calc(16px + var(--sab));left:50%;transform:translateX(-50%);z-index:6;padding:10px 22px;font:700 16px system-ui,sans-serif;border-radius:10px;border:0;background:#ff6a00;color:#fff";rpBtn.onclick=()=>{RP=null;rpBtn.style.display="none";$("#res").classList.remove("hide")};document.body.appendChild(rpBtn)}
  rpBtn.style.display="block";rpC.j=-1}

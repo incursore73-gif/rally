@@ -17,7 +17,7 @@ const pilot=(k,maxF=26000)=>{T.startLevel(k);const S=T.S;let n=0,off=0,hit=0,air
     const nxt=S.notes.find(nn=>nn.i1>q.idx&&nn.i0-q.idx<60),vmax=nxt&&(nxt.t==='hair'||nxt.t==='vh')?190:nxt&&nxt.t==='c90'?300:520;
     T.keys.KeyD=e>.04?1:0;T.keys.KeyA=e<-.04?1:0;T.keys.KeyW=sp<vmax?1:0;T.keys.Space=Math.abs(e)>.6&&sp>260?1:0;frame();n++;if(Math.abs(q.lat)>S.hw)off++;if(q.air)air=true}
   return{state:T.state,time:T.raceT,frames:n,off,air,dmg:T.dmg,N:S.N,notes:S.notes.length,hair:S.notes.filter(x=>x.t==='hair').length,J:S.J.length,tr:S.tr.length,srf:T.ST[k].srf}};
-for(const k of[0,1,3,5,9]){const r=pilot(k);console.log('lvl',k,JSON.stringify(r));ck('prova '+k+' completata',r.state==='done');ck('prova '+k+' ha tornanti e note',r.hair>=3&&r.notes>=8);if(r.srf==='gravel')ck('prova '+k+' salti (sterrato)',r.J>=1,`(${r.J})`)}
+for(const k of[0,1,2,3,4,7,8]){const r=pilot(k);console.log('lvl',k,JSON.stringify(r));ck('prova '+k+' completata',r.state==='done');ck('prova '+k+' ha note di curva'+(T.ST[k].alp.th==='alpine'?' e tornanti':''),T.ST[k].alp.th==='alpine'?r.hair>=3&&r.notes>=8:r.notes>=4);if(r.srf==='gravel')ck('prova '+k+' salti (sterrato)',r.J>=1,`(${r.J})`)}
 // guardrail: spingi l'auto contro un tratto protetto e verifica che venga respinta
 T.startLevel(0);{const E=T.ENVI,R=E.road,fl=E.guardFlags.right;let idx=-1;for(let i=100;i<R.N-100;i++)if(fl[i]&&fl[i+5]&&fl[i-5]){idx=i;break}
   const q=T.me;const X=R.X[idx]+R.NX[idx]*(R.hw+R.shoulder+.6),Z=R.Z[idx]+R.NZ[idx]*(R.hw+R.shoulder+.6);q.x=X/.06;q.y=Z/.06;q.h=Math.atan2(R.TZ[idx],R.TX[idx])+1.2;q.vf=400;q.vl=0;let n=0;while(T.state!=='race'&&n<400){frame();n++}

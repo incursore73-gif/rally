@@ -1,26 +1,32 @@
 import * as THREE from 'three';
 import {makeNoise} from './noise.js';
+import {THEMES} from './themes.js';
 const ss=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
 // Terreno naturale deterministico: versante in salita verso -z, pareti laterali, massicci lontani, gobbe e canaloni.
-export function createNatural(cfg){const n=makeNoise(cfg.seed),t=cfg.terrain;
-  return(x,z)=>{const zc=Math.min(450,Math.max(-3200,z)),climb=-zc*t.baseSlope,wall=Math.max(0,Math.abs(x)-330)*.5,
+export function createNatural(cfg){const n=makeNoise(cfg.seed),t=Object.assign({},cfg.terrain,cfg.themeDef&&cfg.themeDef.terrain);
+  return(x,z)=>{const zc=Math.min(450,Math.max(-3200,z)),climb=-zc*t.baseSlope,wall=Math.max(0,Math.abs(x)-t.wallX)*t.wallK,
     mass=t.ridgeAmp*ss(-250,-2400,z)*(.3+n.ridged(x*.0012+9,z*.0012,5)*1.6),
     bump=t.noiseAmp*n.fbm(x*.006,z*.006,5)+6*n.fbm(x*.035,z*.035,3),gully=-16*Math.pow(n.ridged(x*.011+40,z*.011,3),2);
-    return 100+climb+wall+mass+bump+gully}}
+    let y=100+climb+wall+mass+bump+gully;
+    if(t.terrace){const q=t.terrace,f=y/q,fl=Math.floor(f);y=(fl+ss(.35,.65,f-fl))*q}   // gradoni da canyon
+    if(t.sea)y-=t.sea.drop*ss(t.sea.x0,t.sea.x1,x);                                       // scogliera verso il mare
+    return y}}
 export function createTerrain(cfg,natural,road,preset){
   const tp=cfg.terrain,d0=road.hw+road.shoulder+.35,nz=makeNoise(cfg.seed+5);
   // Quota finale: terreno naturale vincolato fra una scarpata ripida a valle e una parete di scavo a monte; piatto sotto la carreggiata.
   const heightAt=(x,z)=>{const H=natural(x,z),q=road.nearest(x,z,tp.influence);if(!q)return H;const ry=road.Y[q.i]-.1,e=Math.max(0,q.d-d0),lo=ry-tp.cliffSlope*e,hi=ry+tp.cutSlope*e;
     // Gola sul lato a valle: il terreno cade fino a 'gorge' metri sotto la strada, poi torna al naturale (nessuna discontinuità a fine influenza).
-    const w=ss(ry+4,ry-8,H)*ss(0,18,e)*(1-ss(30,80,e)),A=tp.gorge*(.55+.45*nz.fbm(x*.02+3,z*.02,2)),y=H+(Math.min(H,ry-A)-H)*w;
+    const w=ss(ry+4,ry-8,H)*ss(0,18,e)*(1-ss(30,80,e)),A=tp.gorge*((cfg.themeDef&&cfg.themeDef.gorgeK)??1)*(.55+.45*nz.fbm(x*.02+3,z*.02,2)),y=H+(Math.min(H,ry-A)-H)*w;
     return Math.min(hi,Math.max(lo,y))};
   const cs=tp.coarseStep,b=road.bounds,m=tp.fineMargin,F={x0:Math.floor((b.x0-m)/cs)*cs,x1:Math.ceil((b.x1+m)/cs)*cs,z0:Math.floor((b.z0-m)/cs)*cs,z1:Math.ceil((b.z1+m)/cs)*cs};
-  const low=road.minY-25,top=road.maxY+10,col=h=>new THREE.Color(h),cGr=col('#566b3a'),cMe=col('#7d8a55'),cSc=col('#8d8a7e'),cRo=col('#77746d'),cDk=col('#55524c'),cSn=col('#eef2f6'),cHz=col('#93a5bd'),tmp=new THREE.Color();
+  const th=cfg.themeDef||THEMES.alpine,pl=th.pal,sea=th.terrain.sea?road.minY-8:null,low=road.minY-25,top=road.maxY+10,C=h=>new THREE.Color(h),tmp=new THREE.Color();
+  const P={gr:C(pl.gr),me:C(pl.me),sc:C(pl.sc),ro:C(pl.ro),dk:C(pl.dk),hz:C(pl.hz),snow:C(pl.snow||'#ffffff'),sand:C(pl.sand||'#e0d3a8'),sn:pl.sn,strata:pl.strata,strataF:pl.strataF};
   function colorAt(x,y,z,ny,far,out){const r=nz.fbm(x*.02,z*.02,3),a=ss(low,top+60,y+r*18),rockT=ss(.84,.55,ny);
-    out.copy(cGr).lerp(cMe,a);out.lerp(cSc,ss(top-10,top+90,y+r*15));out.lerp(cRo,rockT);
-    out.multiplyScalar(1+.08*Math.sin(y*1.1+r*6)*rockT);if(rockT>.6)out.lerp(cDk,.25*(.5+.5*Math.sin(y*.37+r*4)));
-    if(y>top+150&&ny>.5)out.lerp(cSn,ss(top+150,top+230,y+r*20));
-    if(far)out.lerp(cHz,ss(500,2800,Math.hypot(x,z+800))*.85)}
+    out.copy(P.gr).lerp(P.me,a);if(P.sn)out.lerp(P.sc,ss(top-10,top+90,y+r*15));out.lerp(P.ro,rockT);
+    out.multiplyScalar(1+(P.strata||.08)*Math.sin(y*(P.strataF||1.1)+r*6)*rockT);if(rockT>.6)out.lerp(P.dk,.25*(.5+.5*Math.sin(y*.37+r*4)));
+    if(P.sn&&y>top+150&&ny>.5)out.lerp(P.snow,ss(top+150,top+230,y+r*20));
+    if(sea!==null){const d=y-sea;if(d<-1.5)out.lerp(P.dk,.7);else if(d<2.5)out.lerp(P.sand,ss(2.5,-.5,d)*.9)}
+    if(far)out.lerp(P.hz,ss(500,2800,Math.hypot(x,z+800))*.85)}
   function grid(x0,z0,x1,z1,step,hf,skip,far){
     const nx=Math.ceil((x1-x0)/step),nzz=Math.ceil((z1-z0)/step),sx=(x1-x0)/nx,sz=(z1-z0)/nzz,V=(nx+1)*(nzz+1),pos=new Float32Array(V*3),uv=new Float32Array(V*2);
     for(let j=0;j<=nzz;j++)for(let i=0;i<=nx;i++){const k=j*(nx+1)+i,x=x0+i*sx,z=z0+j*sz;pos[k*3]=x;pos[k*3+1]=hf(x,z);pos[k*3+2]=z;uv[k*2]=x/14;uv[k*2+1]=z/14}
@@ -37,7 +43,7 @@ export function createTerrain(cfg,natural,road,preset){
   const fast=(x,z)=>{if(!FI)return heightAt(x,z);const u=(x-FI.x0)/FI.sx,v=(z-FI.z0)/FI.sz;if(u<0||v<0||u>=FI.nx||v>=FI.nz)return natural(x,z);
     const i=u|0,j=v|0,fu=u-i,fv=v-j,W=FI.nx+1,p=FI.pos,a=p[(j*W+i)*3+1],b=p[(j*W+i+1)*3+1],c=p[((j+1)*W+i)*3+1],d=p[((j+1)*W+i+1)*3+1];
     return fu+fv<=1?a+(b-a)*fu+(c-a)*fv:d+(c-d)*(1-fu)+(b-d)*(1-fv)};
-  return{heightAt,fast,natural,fineRect:F,
+  return{heightAt,fast,natural,seaY:sea,fineRect:F,
     slopeAt(x,z,d=3){return Math.hypot(heightAt(x+d,z)-heightAt(x-d,z),heightAt(x,z+d)-heightAt(x,z-d))/(2*d)},
     build(M){const g=new THREE.Group(),E=tp.coarseExtent,fine=new THREE.Mesh(grid(F.x0,F.z0,F.x1,F.z1,preset.fineStep,heightAt,null,false),M.terrain),
         far=new THREE.Mesh(grid(-E,-3000,E,1200,tp.coarseStep,natural,inF,true),M.terrain);fine.receiveShadow=true;far.receiveShadow=false;g.add(fine,far);FI=fine.geometry.userData.grid;return g}};
