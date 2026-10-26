@@ -1,7 +1,7 @@
 // Parametri modificabili. 1 unità Three.js = 1 metro.
 export const DEFAULTS={
   seed:7,
-  road:{width:6.5,shoulder:1.2,hairpins:10,radiusMin:12,radiusMax:18,legMin:90,xRange:[-170,170],legTilt:[4,9],
+  road:{surface:'asphalt',width:6.5,shoulder:1.2,hairpins:10,radiusMin:12,radiusMax:18,legMin:90,xRange:[-170,170],legTilt:[4,9],
         maxGrade:0.11,smoothWindow:110,sampleStep:2},
   terrain:{baseSlope:0.3,noiseAmp:26,ridgeAmp:260,fineMargin:120,coarseStep:40,coarseExtent:2600,
            cliffSlope:1.7,cutSlope:1.15,gorge:26,influence:90,skirt:45},

@@ -31,10 +31,14 @@ export function createTerrain(cfg,natural,road,preset){
     const ec=new Map(),ek=(a,c)=>a<c?a*V+c:c*V+a;for(let t=0;t<ix.length;t+=3)for(let e=0;e<3;e++){const k=ek(ix[t+e],ix[t+(e+1)%3]);ec.set(k,(ec.get(k)||0)+1)}
     const P=Array.from(pos),NR=Array.from(nr.array),CL=Array.from(cl),UV=Array.from(uv),I=Array.from(ix),map=new Map(),dup=v=>{if(map.has(v))return map.get(v);const id=P.length/3;P.push(pos[v*3],pos[v*3+1]-tp.skirt,pos[v*3+2]);NR.push(nr.getX(v),nr.getY(v),nr.getZ(v));CL.push(cl[v*3],cl[v*3+1],cl[v*3+2]);UV.push(uv[v*2],uv[v*2+1]);map.set(v,id);return id};
     for(let t=0;t<ix.length;t+=3)for(let e=0;e<3;e++){const a=ix[t+e],c=ix[t+(e+1)%3];if(ec.get(ek(a,c))===1){const a2=dup(a),c2=dup(c);I.push(a,c,c2,a,c2,a2)}}
-    const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(P,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(NR,3));G.setAttribute('color',new THREE.Float32BufferAttribute(CL,3));G.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));G.setIndex(I);return G}
-  const inF=(x,z)=>x>F.x0&&x<F.x1&&z>F.z0&&z<F.z1;
-  return{heightAt,natural,fineRect:F,
+    const G=new THREE.BufferGeometry();G.userData.grid={x0,z0,nx,nz:nzz,sx,sz,pos};G.setAttribute('position',new THREE.Float32BufferAttribute(P,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(NR,3));G.setAttribute('color',new THREE.Float32BufferAttribute(CL,3));G.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));G.setIndex(I);return G}
+  const inF=(x,z)=>x>F.x0&&x<F.x1&&z>F.z0&&z<F.z1;let FI=null;
+  // Quota identica alla mesh visibile (stessa triangolazione): economica, adatta al ciclo di gioco.
+  const fast=(x,z)=>{if(!FI)return heightAt(x,z);const u=(x-FI.x0)/FI.sx,v=(z-FI.z0)/FI.sz;if(u<0||v<0||u>=FI.nx||v>=FI.nz)return natural(x,z);
+    const i=u|0,j=v|0,fu=u-i,fv=v-j,W=FI.nx+1,p=FI.pos,a=p[(j*W+i)*3+1],b=p[(j*W+i+1)*3+1],c=p[((j+1)*W+i)*3+1],d=p[((j+1)*W+i+1)*3+1];
+    return fu+fv<=1?a+(b-a)*fu+(c-a)*fv:d+(c-d)*(1-fu)+(b-d)*(1-fv)};
+  return{heightAt,fast,natural,fineRect:F,
     slopeAt(x,z,d=3){return Math.hypot(heightAt(x+d,z)-heightAt(x-d,z),heightAt(x,z+d)-heightAt(x,z-d))/(2*d)},
     build(M){const g=new THREE.Group(),E=tp.coarseExtent,fine=new THREE.Mesh(grid(F.x0,F.z0,F.x1,F.z1,preset.fineStep,heightAt,null,false),M.terrain),
-        far=new THREE.Mesh(grid(-E,-3000,E,1200,tp.coarseStep,natural,inF,true),M.terrain);fine.receiveShadow=true;far.receiveShadow=false;g.add(fine,far);return g}};
+        far=new THREE.Mesh(grid(-E,-3000,E,1200,tp.coarseStep,natural,inF,true),M.terrain);fine.receiveShadow=true;far.receiveShadow=false;g.add(fine,far);FI=fine.geometry.userData.grid;return g}};
 }

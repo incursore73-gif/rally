@@ -1,8 +1,13 @@
 {
-  "name": "alpine-drift-3d-environment",
+  "name": "rally-alpine-3d",
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "scripts": {"test": "node tests/verify.mjs", "stats": "node tests/stats.mjs", "serve": "npx http-server -c-1 ."},
-  "devDependencies": {"three": "0.160.0"}
+  "scripts": {
+    "test": "node tests/verify.mjs && node tests/play.mjs",
+    "serve": "npx http-server -c-1 ."
+  },
+  "devDependencies": {
+    "three": "0.160.0"
+  }
 }

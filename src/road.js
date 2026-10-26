@@ -45,7 +45,7 @@ export function createRoad(cfg,natural){
     if(bi<0)return null;const dx=x-X[bi],dz=z-Z[bi];return{i:bi,d:Math.sqrt(bd),lat:dx*NX[bi]+dz*NZ[bi],s:S[bi]}}
   // Tornanti = tratti ad alta curvatura continua.
   const hairpins=[],kT=1/(rc.radiusMax*1.7);for(let i=0;i<N;){if(Math.abs(K[i])>kT){let j=i;while(j<N&&Math.abs(K[j])>kT*.8)j++;if(j-i>=14){const m=(i+j)>>1;hairpins.push({index:m,s:S[m],radius:1/Math.abs(K[m]),side:Math.sign(K[m]),position:new THREE.Vector3(X[m],Y[m],Z[m])})}i=j}else i++}
-  const R={X,Y,Z,S,TX,TZ,NX,NZ,K,N,hw,shoulder:sh,width:rc.width,length:S[N-1],bounds:{x0,x1,z0,z1},minY,maxY,hairpins,attempts:attempt,nearest,
+  const R={surface:rc.surface,X,Y,Z,S,TX,TZ,NX,NZ,K,N,hw,shoulder:sh,width:rc.width,length:S[N-1],bounds:{x0,x1,z0,z1},minY,maxY,hairpins,attempts:attempt,nearest,
     pointAt(s){s=Math.min(Math.max(s,0),S[N-1]);let i=Math.min(N-2,Math.floor(s/ds));while(i<N-2&&S[i+1]<s)i++;while(i>0&&S[i]>s)i--;const f=(s-S[i])/(S[i+1]-S[i]||1),L=(a,b)=>a+(b-a)*f,t=new THREE.Vector3(L(TX[i],TX[i+1]),0,L(TZ[i],TZ[i+1])).normalize();
       return{s,position:new THREE.Vector3(L(X[i],X[i+1]),L(Y[i],Y[i+1]),L(Z[i],Z[i+1])),tangent:t,normal:new THREE.Vector3(-t.z,0,t.x),grade:(Y[i+1]-Y[i])/(S[i+1]-S[i]||1),width:rc.width}},
     info(x,z,margin=0){const q=nearest(x,z,40);if(!q)return{onRoad:false,onShoulder:false,distance:Infinity};const a=Math.abs(q.lat);
@@ -60,18 +60,19 @@ function strip(R,o0,o1,dy,vs,mask){const N=R.N,pos=new Float32Array(N*6),uv=new 
 export function buildRoadMeshes(R,M){
   const g=new THREE.Group(),hw=R.hw,sh=R.shoulder,add=(geo,mat,rs=true)=>{const m=new THREE.Mesh(geo,mat);m.receiveShadow=rs;g.add(m);return m};
   add(strip(R,-hw,hw,0,8),M.asphalt);add(strip(R,hw,hw+sh,-.03,6),M.shoulder);add(strip(R,-hw-sh,-hw,-.03,6),M.shoulder);
-  add(strip(R,hw-.38,hw-.24,.02,6),M.line,false);add(strip(R,-hw+.24,-hw+.38,.02,6),M.line,false);
-  add(strip(R,-.07,.07,.02,6,i=>Math.floor(R.S[i]/5)%2===0),M.line,false);
+  if(R.surface!=='gravel'){add(strip(R,hw-.38,hw-.24,.02,6),M.line,false);add(strip(R,-hw+.24,-hw+.38,.02,6),M.line,false);
+    add(strip(R,-.07,.07,.02,6,i=>Math.floor(R.S[i]/5)%2===0),M.line,false)}
   return g;
 }
 // Guardrail, pali, delineatori, pannelli chevron nei tornanti, muretti sul lato a monte.
 export function buildFurniture(R,heightAt,M,cfg){
   const g=new THREE.Group(),hw=R.hw,sh=R.shoulder,N=R.N,ds=cfg.road.sampleStep,rl=cfg.rails,off=hw+sh-.15,segs=[],dummy=new THREE.Object3D();
-  const postM=[],delM=[],wallM=[],chevM=[];
+  const postM=[],delM=[],wallM=[],chevM=[],FL={};
   for(const side of[-1,1]){
     const flag=new Uint8Array(N);
     for(let i=0;i<N;i++){const o=hw+sh+2.5;flag[i]=R.Y[i]-heightAt(R.X[i]+R.NX[i]*side*o,R.Z[i]+R.NZ[i]*side*o)>rl.dropMin?1:0}
     for(let i=1;i<N-1;i++)if(!flag[i]){let j=i;while(j<N&&!flag[j])j++;if(flag[i-1]&&j<N&&j-i<=4)for(let k=i;k<j;k++)flag[k]=1;i=j}
+    FL[side]=flag;
     for(let i=0;i<N;){if(!flag[i]){i++;continue}let j=i;while(j<N&&flag[j])j++;
       if(j-i>=6){const pts=[];for(let k=i;k<j;k++)pts.push(new THREE.Vector3(R.X[k]+R.NX[k]*side*off,R.Y[k]+.5,R.Z[k]+R.NZ[k]*side*off));
         segs.push({side,points:pts});
@@ -89,5 +90,5 @@ export function buildFurniture(R,heightAt,M,cfg){
   inst(new THREE.BoxGeometry(.1,.9,.1),M.post,postM);inst(new THREE.BoxGeometry(.09,.9,.09),M.delin,delM);inst(new THREE.BoxGeometry(3,.8,.55),M.wall,wallM,true);
   for(const h of R.hairpins){for(let k=-3;k<=3;k++){const i=Math.min(N-1,Math.max(0,h.index+k*3)),side=-h.side,o=hw+sh+.9;chevM.push([R.X[i]+R.NX[i]*side*o,R.Y[i]+1.3,R.Z[i]+R.NZ[i]*side*o,Math.atan2(-R.TZ[i],R.TX[i])])}}
   inst(new THREE.BoxGeometry(1,.7,.05),M.sign,chevM,true);
-  return{group:g,guardrails:segs,landmarks:R.hairpins.map(h=>({type:'hairpin',position:h.position,s:h.s,radius:h.radius}))};
+  return{group:g,guardrails:segs,flags:{left:FL[-1],right:FL[1]},landmarks:R.hairpins.map(h=>({type:'hairpin',position:h.position,s:h.s,radius:h.radius}))};
 }

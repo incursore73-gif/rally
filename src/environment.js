@@ -16,16 +16,18 @@ function skyMesh(){const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWr
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(6400,24,14),m);mesh.frustumCulled=false;mesh.renderOrder=-10;return mesh}
 function disposeTree(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose()})}
 export function createEnvironment(scene,renderer,userCfg={}){
-  let cfg=merge(DEFAULTS,userCfg),preset=PRESETS[cfg.render.preset],hour=cfg.sun.hour,sunScale=cfg.sun.intensity,state=null,M=null,content=null;
+  let cfg=merge(DEFAULTS,userCfg),preset=PRESETS[cfg.render.preset],hour=cfg.sun.hour,sunScale=cfg.sun.intensity,state=null,M=null,content=null,rain=false,shadowsOn=true;
   const sky=skyMesh(),sun=new THREE.DirectionalLight(0xffffff,1),hemi=new THREE.HemisphereLight(0xcfe3ff,0x4a4a3a,.6),sunTarget=new THREE.Object3D(),sunDir=new THREE.Vector3();
   scene.add(sky,sun,sun.target,hemi,sunTarget);scene.fog=new THREE.Fog(0xaec6dc,80,preset.fogFar);
+  const GRAY=new THREE.Color('#8a939c');
   function applyLighting(){const p=palette(hour),el=Math.asin(Math.sin((hour-6)/12*Math.PI)*.92),az=2.2;
+    if(rain){p.top.lerp(GRAY,.65);p.hor.lerp(GRAY,.55);p.fog.lerp(GRAY,.6);p.sunI*=.45;p.hemi*=.85}
     sunDir.set(Math.cos(el)*Math.cos(az),Math.sin(el),Math.cos(el)*Math.sin(az)).normalize();
     sky.material.uniforms.top.value.copy(p.top);sky.material.uniforms.hor.value.copy(p.hor);sky.material.uniforms.sunCol.value.copy(p.sun);sky.material.uniforms.sunDir.value.copy(sunDir);
-    sun.color.copy(p.sun);sun.intensity=el>0?p.sunI*sunScale:p.sunI*sunScale*.2;hemi.intensity=p.hemi;scene.fog.color.copy(p.fog);scene.fog.far=preset.fogFar;scene.background=p.hor.clone();
-    renderer.shadowMap.enabled=preset.shadows;sun.castShadow=preset.shadows&&el>.05;if(sun.castShadow){sun.shadow.mapSize.set(preset.shadowMap,preset.shadowMap);const c=sun.shadow.camera;c.left=c.bottom=-110;c.right=c.top=110;c.near=10;c.far=1100;sun.shadow.bias=-.0006;sun.shadow.normalBias=.4}}
+    sun.color.copy(p.sun);sun.intensity=el>0?p.sunI*sunScale:p.sunI*sunScale*.2;hemi.intensity=p.hemi;scene.fog.color.copy(p.fog);scene.fog.far=rain?Math.min(preset.fogFar,1500):preset.fogFar;scene.fog.near=rain?30:80;scene.background=p.hor.clone();
+    renderer.shadowMap.enabled=preset.shadows&&shadowsOn;sun.castShadow=preset.shadows&&shadowsOn&&el>.05;if(sun.castShadow){sun.shadow.mapSize.set(preset.shadowMap,preset.shadowMap);const c=sun.shadow.camera;c.left=c.bottom=-110;c.right=c.top=110;c.near=10;c.far=1100;sun.shadow.bias=-.0006;sun.shadow.normalBias=.4}}
   function clear(){if(content){scene.remove(content);disposeTree(content);content=null}if(M){M.dispose();M=null}}
-  function build(){clear();const t0=performance.now(),natural=createNatural(cfg),road=createRoad(cfg,natural),terrain=createTerrain(cfg,natural,road,preset);M=createMaterials(preset,cfg.textures||{});
+  function build(){clear();const t0=performance.now(),natural=createNatural(cfg),road=createRoad(cfg,natural),terrain=createTerrain(cfg,natural,road,preset);M=createMaterials(preset,cfg.textures||{},cfg.road.surface);
     const g=new THREE.Group();g.add(terrain.build(M),buildRoadMeshes(road,M));const furn=buildFurniture(road,terrain.heightAt,M,cfg),veg=buildVegetation(cfg,preset,terrain,road,M);g.add(furn.group,veg.group);
     scene.add(g);content=g;state={natural,road,terrain,furn,veg,buildMs:performance.now()-t0};renderer.setPixelRatio(Math.min(preset.pixelRatio,window.devicePixelRatio||1));applyLighting()}
   build();
@@ -38,7 +40,9 @@ export function createEnvironment(scene,renderer,userCfg={}){
     setPreset(name){return api.regenerate({render:{preset:name}})},
     setTimeOfDay(h){hour=((h%24)+24)%24;applyLighting()},get timeOfDay(){return hour},setSunIntensity(v){sunScale=v;applyLighting()},
     getRoadPoint(s){return state.road.pointAt(s)},
-    getTerrainHeight(x,z){return state.terrain.heightAt(x,z)},
+    getTerrainHeight(x,z){return state.terrain.fast(x,z)},getTerrainHeightExact(x,z){return state.terrain.heightAt(x,z)},
+    get colliders(){return state.veg.colliders},get guardFlags(){return state.furn.flags},get sun(){return sun},get hemi(){return hemi},
+    setRain(v){rain=!!v;applyLighting()},setShadows(v){shadowsOn=!!v;applyLighting()},
     getRoadHeight(x,z){const q=state.road.nearest(x,z,40);return q?state.road.Y[q.i]:null},
     isOnRoad(x,z,margin=0){return state.road.info(x,z,margin)},
     getStart(){const p=state.road.pointAt(12);return{position:p.position.clone().addScaledVector(p.normal,lane()).setY(p.position.y+.3),tangent:p.tangent.clone(),yaw:Math.atan2(p.tangent.x,p.tangent.z),s:12}},
