@@ -5,8 +5,8 @@ import {createNatural,createTerrain} from './terrain.js';
 import {createRoad,buildRoadMeshes,buildFurniture} from './road.js';
 import {buildVegetation} from './vegetation.js';
 // Fasce orarie: [ora, cielo alto, orizzonte, nebbia, sole, intensità sole, intensità emisferica]
-const KEYS=[[0,'#03060d','#10182a','#0c1220','#8899cc',.04,.18],[5.5,'#3c4f7c','#e9a46e','#c9a58c','#ff9a55',.5,.35],[8,'#5b8fd6','#c4dcf0','#b6cde0','#ffe2b8',.95,.55],
-  [12,'#3f7fd8','#bcd8f2','#a9c4de','#fff6e6',1.15,.65],[17,'#4f86d0','#cfe0ee','#bccfdf','#ffe9c9',1,.6],[19.2,'#3a4a78','#f0a05e','#d19a82','#ff8a45',.5,.35],[21.5,'#03060d','#10182a','#0c1220','#8899cc',.04,.18],[24,'#03060d','#10182a','#0c1220','#8899cc',.04,.18]];
+const KEYS=[[0,'#03060d','#10182a','#0c1220','#8899cc',.08,.3],[5.5,'#3c4f7c','#e9a46e','#c9a58c','#ff9a55',.6,.5],[8,'#5b8fd6','#c4dcf0','#b6cde0','#ffe2b8',1.1,.85],
+  [12,'#3f7fd8','#bcd8f2','#a9c4de','#fff6e6',1.3,.95],[17,'#4f86d0','#cfe0ee','#bccfdf','#ffe9c9',1.15,.9],[19.2,'#3a4a78','#f0a05e','#d19a82','#ff8a45',.7,.5],[21.5,'#03060d','#10182a','#0c1220','#8899cc',.08,.3],[24,'#03060d','#10182a','#0c1220','#8899cc',.08,.3]];
 const lerpHex=(a,b,t)=>new THREE.Color(a).lerp(new THREE.Color(b),t);
 function palette(h){let i=0;while(i<KEYS.length-2&&h>KEYS[i+1][0])i++;const A=KEYS[i],B=KEYS[i+1],t=Math.min(1,Math.max(0,(h-A[0])/(B[0]-A[0])));
   return{top:lerpHex(A[1],B[1],t),hor:lerpHex(A[2],B[2],t),fog:lerpHex(A[3],B[3],t),sun:lerpHex(A[4],B[4],t),sunI:A[5]+(B[5]-A[5])*t,hemi:A[6]+(B[6]-A[6])*t}}
@@ -17,7 +17,7 @@ function skyMesh(){const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWr
 function disposeTree(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose()})}
 export function createEnvironment(scene,renderer,userCfg={}){
   let cfg=merge(DEFAULTS,userCfg),preset=PRESETS[cfg.render.preset],hour=cfg.sun.hour,sunScale=cfg.sun.intensity,state=null,M=null,content=null,rain=false,shadowsOn=true;
-  const sky=skyMesh(),sun=new THREE.DirectionalLight(0xffffff,1),hemi=new THREE.HemisphereLight(0xcfe3ff,0x4a4a3a,.6),sunTarget=new THREE.Object3D(),sunDir=new THREE.Vector3();
+  const sky=skyMesh(),sun=new THREE.DirectionalLight(0xffffff,1),hemi=new THREE.HemisphereLight(0xdcecff,0x7a7860,.8),sunTarget=new THREE.Object3D(),sunDir=new THREE.Vector3();
   scene.add(sky,sun,sun.target,hemi,sunTarget);scene.fog=new THREE.Fog(0xaec6dc,80,preset.fogFar);
   const GRAY=new THREE.Color('#8a939c');
   function applyLighting(){const p=palette(hour),el=Math.asin(Math.sin((hour-6)/12*Math.PI)*.92),az=2.2;
