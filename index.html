@@ -1,20 +1,85 @@
 <!DOCTYPE html>
-<html lang="it"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Alpine Drift 3D – Ambiente alpino</title>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Rally 3D – Passo alpino</title>
 <style>
-:root{--fg:#f3f5f7;--bg:rgba(12,16,22,.62);--ac:#ff8a2a}
-html,body{margin:0;height:100%;overflow:hidden;background:#0b0f14;color:var(--fg);font:600 13px system-ui,sans-serif;touch-action:none}
-canvas{display:block;width:100%;height:100%}
-#ui{position:fixed;left:0;right:0;bottom:0;padding:8px max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:linear-gradient(transparent,var(--bg) 40%)}
-#ui button,#ui select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid #fff4;border-radius:10px;padding:8px 12px}
-#ui button.on{background:var(--ac);color:#111;border-color:var(--ac)}
-#ui label{display:flex;align-items:center;gap:6px;flex:1 1 150px}#ui input[type=range]{flex:1;min-width:80px}
-#hud{position:fixed;top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));background:var(--bg);padding:6px 10px;border-radius:10px;white-space:pre;font-size:12px;pointer-events:none}
-</style>
+:root{--bg:#0e1210;--fg:#eef1ea;--mut:#98a28f;--red:#e8200f;--card:#1a211a;--line:#2e3a2e;--sat:env(safe-area-inset-top,0px);--sar:env(safe-area-inset-right,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px)}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:none}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif}
+canvas#c{position:fixed;inset:0;width:100%;height:100%}
+#hud{position:fixed;top:calc(8px + var(--sat));left:calc(14px + var(--sal));pointer-events:none;line-height:1.05;text-shadow:0 1px 4px #000}
+#pos{font-size:44px;font-weight:700;min-height:46px}#pos small{font-size:20px;color:#cfd5c8}
+#lap{font-size:20px;font-weight:600}#tm{font-size:26px;font-variant-numeric:tabular-nums;font-weight:600}
+#rec{font-size:19px;font-weight:600;color:#ffd84d;font-variant-numeric:tabular-nums;margin-top:2px}
+#sect{display:flex;gap:4px;margin-top:5px}
+#sect .c{position:relative;width:72px;height:26px;border-radius:5px;background:rgba(10,16,10,.6);overflow:hidden;font:600 15px/24px "Barlow Condensed","Arial Narrow",sans-serif;text-align:center;font-variant-numeric:tabular-nums;color:#fff;border:1px solid rgba(255,255,255,.25)}
+#sect .c i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.22)}
+#sect .c b{position:relative;font-weight:600}
+#sect .c.cur{border-color:#fff}
+#sect .c.y{background:#d9a900;border-color:#ffe066;color:#111}
+#sect .c.p{background:#9b2fe0;border-color:#d48bff;box-shadow:0 0 10px #b84dff}
+#sect .c.glow{animation:gl .45s ease-in-out 8 alternate}
+@keyframes gl{from{box-shadow:0 0 6px #b84dff}to{box-shadow:0 0 26px 6px #d48bff}}
+#tm.pu{color:#d48bff;text-shadow:0 0 12px #b84dff}
+#mm{position:fixed;top:calc(8px + var(--sat));right:calc(14px + var(--sar));width:190px;height:190px;pointer-events:none;border-radius:12px;background:rgba(10,16,10,.55);border:1px solid rgba(255,255,255,.25)}
+#note{position:fixed;top:calc(54px + var(--sat));left:50%;transform:translateX(-50%);background:rgba(10,16,10,.72);border:2px solid #fff;border-radius:12px;padding:4px 16px;font-size:28px;font-weight:700;white-space:nowrap;pointer-events:none;display:flex;gap:10px;align-items:center}
+#note small{font-size:18px;font-weight:600;color:#cfd5c8}
+#note.h{border-color:#ff4a2a;color:#ffb09a}
+#spdw{position:fixed;bottom:calc(10px + var(--sab));left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;text-shadow:0 1px 4px #000}
+#spd{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+#revw{width:220px;height:10px;margin:2px auto 0;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#rev{height:100%;width:0;border-radius:5px}
+#msg{position:fixed;left:0;right:0;top:30%;text-align:center;font-size:clamp(48px,18vh,120px);font-weight:700;pointer-events:none;text-shadow:0 3px 14px #000}
+#msg.gm{font-size:30px;top:26%;color:#ff5a4a}#msg.gm.ok{color:#3ddc84}
+#snd{position:fixed;top:calc(8px + var(--sat));left:50%;margin-left:-20px;width:40px;height:40px;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:rgba(10,16,10,.5);font-size:18px;z-index:3}
+#pedals{position:fixed;left:calc(14px + var(--sal));bottom:calc(14px + var(--sab));width:260px;height:62%;display:flex;flex-direction:row;gap:10px}
+#pedals button{border:2px solid rgba(255,255,255,.35);border-radius:16px;color:#fff;font:600 20px/1.05 "Barlow Condensed","Arial Narrow",sans-serif;background:rgba(10,16,10,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#gas{flex:1.25;border-color:rgba(60,220,120,.6)!important}
+#hb{flex:1;border-color:rgba(255,190,40,.8)!important}
+#pedals button.on{background:rgba(255,255,255,.35)}
+#fs{position:fixed;top:calc(8px + var(--sat));left:50%;margin-left:28px;width:40px;height:40px;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:rgba(10,16,10,.5);color:#fff;font-size:18px;z-index:3}
+#wz{position:fixed;right:0;top:0;bottom:0;width:44%}
+#wheel{position:absolute;right:calc(34px + var(--sar));bottom:calc(14px + var(--sab));width:min(210px,52vh);height:min(210px,52vh);border-radius:50%;border:14px solid rgba(255,255,255,.55);background:rgba(10,16,10,.4)}
+#wheel::before{content:"";position:absolute;left:50%;top:50%;width:74%;height:12px;margin:-6px 0 0 -37%;background:rgba(255,255,255,.55);border-radius:6px}
+#wheel::after{content:"";position:absolute;left:50%;top:-12px;width:10px;height:22px;margin-left:-5px;background:var(--red);border-radius:3px}
+.ov{position:fixed;inset:0;background:rgba(8,12,8,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:calc(12px + var(--sat)) calc(16px + var(--sar)) calc(12px + var(--sab)) calc(16px + var(--sal));z-index:5;overflow:auto;touch-action:pan-y}
+.ov *{touch-action:pan-y}
+.hide{display:none!important}
+h1{margin:0;font-size:clamp(34px,9vh,56px);line-height:1}h1 b{color:#ff8a1a}
+.sub{color:var(--mut);font-size:18px;margin:0}
+#lv{display:grid;grid-template-columns:repeat(3,minmax(150px,200px));gap:8px}
+.lvb{background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--fg);padding:9px 12px;text-align:left;font:600 22px "Barlow Condensed","Arial Narrow",sans-serif}
+.lvb small{display:block;color:var(--mut);font-size:16px;font-weight:500}
+.lvb:active{background:#26331f;border-color:#ff8a1a}
+.btn{background:#e8590c;border:0;color:#fff;border-radius:10px;padding:10px 20px;font:700 22px "Barlow Condensed","Arial Narrow",sans-serif}
+.btn.g{background:var(--card);border:1px solid var(--line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#res .big{font-size:60px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+#res table{border-collapse:collapse;font-size:20px;font-variant-numeric:tabular-nums}
+#res td{padding:1px 12px;color:#cfd5c8}
+#rot{position:fixed;inset:0;background:var(--bg);z-index:9;display:none;align-items:center;justify-content:center;font-size:26px;text-align:center;padding:30px}
+@media (orientation:portrait){#rot{display:flex}}
+canvas#c{display:none}canvas#gl{position:fixed;inset:0;width:100%;height:100%}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
-</head><body>
-<div id="hud">caricamento…</div>
-<div id="ui"></div>
-<script type="module" src="./src/main.js"></script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"><div id="pos"></div><div id="lap"></div><div id="tm"></div><div id="rec"></div><div id="sect"></div></div>
+<canvas id="mm" width="320" height="320"></canvas>
+<div id="spdw"><div id="spd"></div><div id="revw"><div id="rev"></div></div></div>
+<audio id="bgm" src="musica.mp3" loop preload="auto"></audio>
+<button id="snd">🔊</button><button id="fs">⛶</button><div id="msg"></div>
+<div id="pedals"><button id="gas">▲<span>ACCELERA</span></button><button id="hb">FRENO<br>A MANO</button></div>
+<div id="wz"><div id="wheel"></div></div>
+<div id="menu" class="ov"><h1><b>RALLY</b> 3D · PROVE SPECIALI</h1><p class="sub">strade di montagna · tornanti, curve strette e scicane · freno a mano per derapare per derapare · batti il tuo fantasma</p><button id="rly" class="btn">Avvia Rally · 6 prove</button><div id="lv"></div><button id="rst" class="btn g">Azzera fantasmi e record</button></div>
+<div id="res" class="ov hide"></div>
+<div id="rot">Ruota il telefono in orizzontale</div>
+<script type="module">
+// Three.js r160 + ambiente alpino (moduli ES) -> poi il gioco (script classico game.js).
+import * as THREE from 'three';
+import {createEnvironment} from './src/environment.js';
+window.THREE=THREE;window.ALPINE={createEnvironment};
+const s=document.createElement('script');s.src='game.js?v=1';document.body.appendChild(s);
+</script>
 </body></html>
