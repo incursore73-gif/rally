@@ -30,18 +30,20 @@ function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t
 // Tracciato = strada alpina generata da src/environment.js, ricampionata ogni DS unità (1 unità = 0.06 m).
 const wrapA2=a=>Math.atan2(Math.sin(a),Math.cos(a));
 function buildStage(L){
- const U_=.06,hwm=L.hw*U_,cfg={seed:L.seed,theme:L.alp.th,road:Object.assign({surface:L.srf==="gravel"?"gravel":"asphalt",width:hwm*2,shoulder:1.4,hairpins:L.alp.h,radiusMin:15,radiusMax:24,legMin:80,xRange:[-150,150]},L.alp.len?{length:L.alp.len}:{}),render:{preset:SET.quality==="perf"?"PERFORMANCE":"HIGH"}};
+ const U_=.06,hwm=L.hw*U_,cfg={seed:L.seed,theme:L.alp.th,road:Object.assign({surface:L.srf==="gravel"?"gravel":"asphalt",width:hwm*2,shoulder:1.4,hairpins:L.alp.h,radiusMin:15,radiusMax:24,legMin:80,minLength:1800,xRange:[-150,150]},L.alp.len?{length:L.alp.len}:{}),render:{preset:SET.quality==="perf"?"PERFORMANCE":"HIGH"}};
  ENVI=ENVI?ENVI.regenerate(cfg):ALPINE.createEnvironment(sc3,R3,cfg);rs3();
  const R=ENVI.road,N=Math.floor(R.length/(DS*U_)),P=[],r=rng(L.seed+991),dm=DS*U_;
  for(let i=0;i<N;i++){const p=ENVI.getRoadPoint(i*dm),h=Math.atan2(p.tangent.z,p.tangent.x);P.push({x:p.position.x/U_,y:p.position.z/U_,h,nx:-Math.sin(h),ny:Math.cos(h)})}
  // Note di curva dalla geometria: tratti con raggio < 150 m, classificati per angolo totale.
  const notes=[],kt=1/150,kap=i=>wrapA2(P[i+1].h-P[i].h)/dm;
- for(let i=2;i<N-2;){const k=kap(i);if(Math.abs(k)>kt){const sg=Math.sign(k);let j=i,ang=0;while(j<N-2){const kk=kap(j);if(Math.abs(kk)<kt*.6||Math.sign(kk)!==sg)break;ang+=Math.abs(kk)*dm;j++}
-   if(ang>.17)notes.push({i0:i,i1:j,dir:sg,ang,t:ang>2.6?"hair":ang>1.8?"vh":ang>1.2?"c90":ang>.45?"sweep":"kink"});i=j+1}else i++}
+ for(let i=2;i<N-2;){const k=kap(i);if(Math.abs(k)>kt){const sg=Math.sign(k);let j=i,ang=0,mx=0;while(j<N-2){const kk=kap(j);if(Math.abs(kk)<kt*.6||Math.sign(kk)!==sg)break;ang+=Math.abs(kk)*dm;mx=Math.max(mx,Math.abs(kk));j++}
+   if(ang>.17)notes.push({i0:i,i1:j,dir:sg,ang,t:(()=>{const Rm=1/Math.max(mx,1e-6);return ang>2.6&&Rm<45?"hair":ang>1.5&&Rm<40?"vh":ang>1&&Rm<65?"c90":ang>.45?"sweep":"kink"})()});i=j+1}else i++}
  const S={L,P,N,total:(N-1)*DS,hw:L.hw,notes,srf:SURF[L.srf],J:[],F:[],B:[],cr:[],cz:[],bw:L.hw*.55,env:ENVI};
  // Salti sugli sterrati: sui rettilinei lunghi, lontani dalle curve.
- if(L.srf==="gravel"){const st=[];for(let i=40,a=-1;i<N-60;i++){const ok=Math.abs(kap(i))<1/700&&!notes.some(n=>i>n.i0-25&&i<n.i1+25);if(ok&&a<0)a=i;if((!ok||i===N-61)&&a>=0){if(i-a>=34)st.push([a,i]);a=-1}}
-  for(let t=0;t<40&&S.J.length<3&&st.length;t++){const[a,b]=st[Math.floor(r()*st.length)],c=a+14+Math.floor(r()*Math.max(1,b-a-28));if(!S.J.some(j=>Math.abs(j.i-c)<90))S.J.push({i:c,h:.55+r()*.35})}}
+ if(L.srf==="gravel"){const cand=[];for(let i=45;i<N-70;i+=3){let mk=0;for(let j=i-16;j<=i+6;j++)mk=Math.max(mk,Math.abs(kap(j)));
+   if(!notes.some(n=>n.t!=="kink"&&n.t!=="sweep"&&i>n.i0-22&&i<n.i1+22))cand.push([mk,i])}
+  cand.sort((a,b)=>a[0]-b[0]);const good=cand.filter(c=>c[0]<1/260),pool=good.length>=4?good:cand.slice(0,Math.max(4,cand.length>>3));
+  for(let t=0;t<60&&S.J.length<3&&pool.length;t++){const i=pool[Math.floor(r()*pool.length)][1];if(!S.J.some(j=>Math.abs(j.i-i)<110))S.J.push({i,h:.55+r()*.35})}}
  S.J.sort((a,b)=>a.i-b.i);notes.sort((a,b)=>a.i0-b.i0);
  const mk=off=>{const p=new Path2D();for(let i=0;i<N;i++){const q=P[i],x=q.x+q.nx*off,y=q.y+q.ny*off;i?p.lineTo(x,y):p.moveTo(x,y)}return p};
  S.road=mk(0);S.rutL=mk(-L.hw*.38);S.rutR=mk(L.hw*.38);S.edgeL=mk(-L.hw*.97);S.edgeR=mk(L.hw*.97);S.fp=[];S.bp=[];

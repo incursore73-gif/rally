@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import {mulberry32} from './noise.js';
 const rot=(v,a)=>({x:v.x*Math.cos(a)-v.y*Math.sin(a),y:v.x*Math.sin(a)+v.y*Math.cos(a)});
-// Punti di controllo 2D (x,z): tratti diagonali sul versante collegati da tornanti (semicerchi).
+// Tornanti: sezioni diverse per ogni seed (tornanti ravvicinati, traversate lunghe e ondulate, tratti brevi), partenza a destra o a sinistra.
 function layout(rc,rnd){
-  const P=[],rr=(a,b)=>a+(b-a)*rnd(),[xa,xb]=rc.xRange;let p={x:xa*.5,y:0},h={x:.995,y:-.1};P.push({...p});
+  const P=[],rr=(a,b)=>a+(b-a)*rnd(),mir=rnd()<.5?-1:1,wd=rr(.75,1.1),sh=rr(-50,50),xa=rc.xRange[0]*wd+sh,xb=rc.xRange[1]*wd+sh;
+  let p={x:mir>0?xa+(xb-xa)*.2:xb-(xb-xa)*.2,y:0},h={x:.995*mir,y:-rr(.03,.16)};P.push({...p});p={x:p.x+h.x*50,y:p.y+h.y*50};P.push({...p});   // rettilineo di partenza
   for(let i=0;i<=rc.hairpins;i++){
-    const sd=Math.sign(h.x)||1,tx=sd>0?rr(Math.max(p.x+rc.legMin,xb-70),xb):rr(xa,Math.min(p.x-rc.legMin,xa+70));
-    const len=Math.abs(tx-p.x)/Math.abs(h.x),k=Math.max(2,Math.round(len/45)),pr={x:-h.y,y:h.x},w=rr(2,7)*(rnd()<.5?-1:1),ph=rr(.7,1.6);
+    const sd=Math.sign(h.x)||1,u=rnd(),kind=i===0?(u<.5?'long':'wavy'):u<.22?'short':u<.5?'long':u<.78?'wavy':'normal',room=sd>0?xb-p.x:p.x-xa;
+    let span=kind==='short'?rr(rc.legMin*.45,rc.legMin*.8):kind==='long'?rr(Math.max(150,room*.7),Math.max(160,room)):kind==='wavy'?rr(110,Math.max(130,room)):rr(rc.legMin,170);
+    span=Math.max(40,Math.min(span,Math.max(room,40)));const len=span/Math.abs(h.x),k=Math.max(2,Math.round(len/(kind==='wavy'?30:45))),pr={x:-h.y,y:h.x};
+    const w=(kind==='wavy'?rr(6,15):rr(2,7))*(rnd()<.5?-1:1),ph=kind==='wavy'?rr(1.5,3.2):rr(.7,1.6);
     for(let j=1;j<=k;j++){const t=j/k,o=j<k?Math.sin(t*Math.PI*ph)*w:0;P.push({x:p.x+h.x*len*t+pr.x*o,y:p.y+h.y*len*t+pr.y*o})}
     p=P[P.length-1];
     if(i===rc.hairpins){P.push({x:p.x+h.x*60,y:p.y+h.y*60});break}
@@ -17,10 +20,14 @@ function layout(rc,rnd){
   }
   return P;
 }
-// Percorso sinuoso: avanza verso -z con curve dolci/medie (nessun tornante), sempre in avanti => mai attraversamenti.
-function layoutMeander(rc,rnd){const P=[],cx=rc.cx||0,half=rc.xHalf||150,step=rc.step||40,cap=rc.maxTurn||.6;let p={x:cx,y:0},ang=-Math.PI/2+(rnd()-.5)*.3,turn=0;P.push({...p});
-  for(let i=0,n=Math.round(rc.length/step);i<n;i++){turn=turn*.8+(rnd()-.5)*(rc.wild||.5);const want=-Math.PI/2+Math.max(-1,Math.min(1,(cx-p.x)/half))*.9;
-    let da=turn+(want-ang)*.22;da=Math.max(-cap,Math.min(cap,da));ang=Math.max(-Math.PI+.6,Math.min(-.6,ang+da));p={x:p.x+Math.cos(ang)*step,y:p.y+Math.sin(ang)*step};P.push({...p})}
+// Percorso sinuoso: alterna tratti scorrevoli, tecnici (curve strette e chicane) e rettilinei; avanza sempre verso -z => mai attraversamenti.
+function layoutMeander(rc,rnd){const P=[],rr=(a,b)=>a+(b-a)*rnd(),cl=(x,a,b)=>Math.max(a,Math.min(b,x)),cx=(rc.cx||0)+rr(-40,40),half=rc.xHalf||150,step=rc.step||40,base=(rc.wild||.5),cap0=rc.maxTurn||.6,bias=rr(-.45,.45);
+  let p={x:cx,y:0},ang=-Math.PI/2+bias*.5+rr(-.3,.3),turn=0,mode='straight',left=rr(90,140);P.push({...p});   // rettilineo di partenza
+  for(let d=0,n=Math.round(rc.length/step);d<n;d++){
+    if((left-=step)<=0){const u=rnd();const tp=rc.techP??.4;mode=u<1-tp-.22?'flow':u<.78?'tech':'straight';left=mode==='straight'?rr(120,260):rr(240,520)}
+    const wild=mode==='tech'?base*2.3:mode==='straight'?.04:base*.8,cap=mode==='tech'?Math.min(.95,cap0*1.55):mode==='straight'?.1:cap0;
+    turn=turn*(mode==='tech'?.9:.8)+(rnd()-.5)*wild;const lo=rc.xMin??cx-half*1.5,hi=rc.xMax??cx+half*1.5;const mg=Math.max(70,step*2.5);let wx=cl((cx-p.x)/half,-1,1)*.9,k=.3;if(p.x>hi-mg){wx=-1.15;k=.8;turn*=.3}else if(p.x<lo+mg){wx=1.15;k=.8;turn*=.3}const want=-Math.PI/2+bias*.5+wx;
+    let da=cl(turn+(want-ang)*k,-cap,cap);ang=cl(ang+da,-Math.PI+.35,-.35);p={x:p.x+Math.cos(ang)*step,y:p.y+Math.sin(ang)*step};P.push({...p})}
   return P}
 const smooth=(a,w)=>{const n=a.length,o=new Float32Array(n),pre=new Float64Array(n+1);for(let i=0;i<n;i++)pre[i+1]=pre[i]+a[i];
   for(let i=0;i<n;i++){const l=Math.max(0,i-w),r=Math.min(n-1,i+w);o[i]=(pre[r+1]-pre[l])/(r-l+1)}return o};
@@ -29,7 +36,8 @@ export function createRoad(cfg,natural){
   const rc=cfg.road,hw=rc.width/2,sh=rc.shoulder;let pts,attempt=0;
   for(;;attempt++){
     pts=new THREE.CatmullRomCurve3((rc.style==='meander'?layoutMeander:layout)(rc,mulberry32(cfg.seed*7919+attempt*104729)).map(p=>new THREE.Vector3(p.x,0,p.y)),false,'centripetal');
-    pts.arcLengthDivisions=8000;pts.updateArcLengths();const sm=pts.getSpacedPoints(Math.round(pts.getLength()/rc.sampleStep)),need=2*(hw+sh)+3;let ok=true;
+    pts.arcLengthDivisions=8000;pts.updateArcLengths();const sm=pts.getSpacedPoints(Math.round(pts.getLength()/rc.sampleStep)),need=2*(hw+sh)+3;let ok=!(rc.minLength&&pts.getLength()<rc.minLength);
+    {const g=3;for(let i=g;i<sm.length-g;i+=2){const a1=Math.atan2(sm[i].z-sm[i-g].z,sm[i].x-sm[i-g].x),a2=Math.atan2(sm[i+g].z-sm[i].z,sm[i+g].x-sm[i].x),dd=Math.abs(Math.atan2(Math.sin(a2-a1),Math.cos(a2-a1)));if(dd/(g*rc.sampleStep)>1/(rc.minRadius||12)){ok=false;break}}}
     for(let i=0;i<sm.length&&ok;i+=3)for(let j=i+25;j<sm.length;j+=3)if(Math.hypot(sm[i].x-sm[j].x,sm[i].z-sm[j].z)<need){ok=false;break}
     if(ok||attempt>40){pts=sm;break}
   }
