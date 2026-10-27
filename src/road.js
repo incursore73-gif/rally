@@ -34,7 +34,8 @@ const smooth=(a,w)=>{const n=a.length,o=new Float32Array(n),pre=new Float64Array
 
 export function createRoad(cfg,natural){
   const rc=cfg.road,hw=rc.width/2,sh=rc.shoulder;let pts,attempt=0;
-  for(;;attempt++){
+  if(rc.points){const cv=new THREE.CatmullRomCurve3(rc.points.map(p=>new THREE.Vector3(p.x,0,p.y)),false,'centripetal');cv.arcLengthDivisions=8000;cv.updateArcLengths();pts=cv.getSpacedPoints(Math.round(cv.getLength()/rc.sampleStep))}
+  else for(;;attempt++){
     pts=new THREE.CatmullRomCurve3((rc.style==='meander'?layoutMeander:layout)(rc,mulberry32(cfg.seed*7919+attempt*104729)).map(p=>new THREE.Vector3(p.x,0,p.y)),false,'centripetal');
     pts.arcLengthDivisions=8000;pts.updateArcLengths();const sm=pts.getSpacedPoints(Math.round(pts.getLength()/rc.sampleStep)),need=2*(hw+sh)+3;let ok=!(rc.minLength&&pts.getLength()<rc.minLength);
     {const g=3;for(let i=g;i<sm.length-g;i+=2){const a1=Math.atan2(sm[i].z-sm[i-g].z,sm[i].x-sm[i-g].x),a2=Math.atan2(sm[i+g].z-sm[i].z,sm[i+g].x-sm[i].x),dd=Math.abs(Math.atan2(Math.sin(a2-a1),Math.cos(a2-a1)));if(dd/(g*rc.sampleStep)>1/(rc.minRadius||12)){ok=false;break}}}
@@ -47,6 +48,8 @@ export function createRoad(cfg,natural){
   for(let i=2;i<N-2;i++){const a=Math.atan2(TZ[i+2],TX[i+2])-Math.atan2(TZ[i-2],TX[i-2]);K[i]=Math.atan2(Math.sin(a),Math.cos(a))/(S[i+2]-S[i-2])}
   // Quota: segue il terreno naturale (smussato), con pendenza longitudinale limitata.
   const ds=rc.sampleStep;let Y=Float32Array.from(X,(x,i)=>natural(x,Z[i]));const w=Math.round(rc.smoothWindow/ds/2);Y=smooth(smooth(Y,w),w);
+  // Profilo di quota esplicito: salite e discese sovrapposte al terreno (onde di lunghezza diversa, raccordate a inizio/fine).
+  if(rc.profile){const pr=rc.profile,Lt=S[N-1];for(let i=0;i<N;i++){const f=Math.min(1,Math.min(S[i],Lt-S[i])/60),tp=f*f*(3-2*f);Y[i]+=pr.amp*(.62*Math.sin(6.283*S[i]/pr.l1+pr.ph)+.38*Math.sin(6.283*S[i]/pr.l2+pr.ph*1.7))*tp}}
   for(let i=1;i<N;i++){const mg=rc.maxGrade*(S[i]-S[i-1]);Y[i]=Math.min(Y[i-1]+mg,Math.max(Y[i-1]-mg,Y[i]))}for(let i=N-2;i>=0;i--){const mg=rc.maxGrade*(S[i+1]-S[i]);Y[i]=Math.min(Y[i+1]+mg,Math.max(Y[i+1]-mg,Y[i]))}Y=smooth(Y,2);
   let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9,minY=1e9,maxY=-1e9;for(let i=0;i<N;i++){x0=Math.min(x0,X[i]);x1=Math.max(x1,X[i]);z0=Math.min(z0,Z[i]);z1=Math.max(z1,Z[i]);minY=Math.min(minY,Y[i]);maxY=Math.max(maxY,Y[i])}
   // Indice spaziale per interrogazioni di vicinanza.

@@ -16,7 +16,7 @@ export function createTerrain(cfg,natural,road,preset){
   // Quota finale: terreno naturale vincolato fra una scarpata ripida a valle e una parete di scavo a monte; piatto sotto la carreggiata.
   const heightAt=(x,z)=>{const H=natural(x,z),q=road.nearest(x,z,tp.influence);if(!q)return H;const ry=road.Y[q.i]-.1,e=Math.max(0,q.d-d0),lo=ry-tp.cliffSlope*e,hi=ry+tp.cutSlope*e;
     // Gola sul lato a valle: il terreno cade fino a 'gorge' metri sotto la strada, poi torna al naturale (nessuna discontinuità a fine influenza).
-    const w=ss(ry+4,ry-8,H)*ss(0,18,e)*(1-ss(30,80,e)),A=tp.gorge*((cfg.themeDef&&cfg.themeDef.gorgeK)??1)*(.55+.45*nz.fbm(x*.02+3,z*.02,2)),y=H+(Math.min(H,ry-A)-H)*w;
+    const w=ss(ry+2,ry-4,H)*ss(0,18,e)*(1-ss(30,80,e)),A=tp.gorge*((cfg.themeDef&&cfg.themeDef.gorgeK)??1)*(.55+.45*nz.fbm(x*.02+3,z*.02,2)),y=H+(Math.min(H,ry-A)-H)*w;
     return Math.min(hi,Math.max(lo,y))};
   const cs=tp.coarseStep,b=road.bounds,m=tp.fineMargin,F={x0:Math.floor((b.x0-m)/cs)*cs,x1:Math.ceil((b.x1+m)/cs)*cs,z0:Math.floor((b.z0-m)/cs)*cs,z1:Math.ceil((b.z1+m)/cs)*cs};
   const th=cfg.themeDef||THEMES.alpine,pl=th.pal,sea=th.terrain.sea?road.minY-8:null,low=road.minY-25,top=road.maxY+10,C=h=>new THREE.Color(h),tmp=new THREE.Color();
