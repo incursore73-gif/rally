@@ -1221,7 +1221,7 @@ function createEnvironment(scene, renderer, userCfg = {}) {
 
 // src/boot.js
 var QG = new URLSearchParams(location.search).get("glb");
-var CAR_URL = (QG && QG !== "off" ? QG : null) || window.CAR_GLB_URL || "https://rally-by-tiziano.netlify.app/auto.glb";
+var CAR_URL = (QG && QG !== "off" ? QG : null) || window.CAR_GLB_URL || "auto.glb";
 var TIMEOUT = 1e4;
 window.THREE = THREE6;
 window.ALPINE = { createEnvironment };
