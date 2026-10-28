@@ -409,7 +409,40 @@ function put(g,x,y,h,vl,st,vf,dt,brk){const X=x*U,Z=y*U,c=Math.cos(h),s=Math.sin
  vf=vf||0;dt=dt||.016;const ac=g.pv===undefined?0:(vf-g.pv)/dt;g.pv=vf;g.pa=(g.pa||0)+(cl3(ac,-900,900)-(g.pa||0))*Math.min(1,dt*8);
  {const ty=hg(X,Z);if(g.ty===undefined||Math.abs(ty-g.ty)>2){g.ty=ty;g.gv=0;g.z=0;g.zv=0}const gv=(ty-g.ty)/dt,ga=cl3((gv-g.gv)/dt,-60,60);g.ty=ty;g.gv=gv;g.zv+=(-ga*.6-140*g.z-16*g.zv)*dt;g.z=cl3(g.z+g.zv*dt,-.28,.22);g.b.position.y=g.z}
  g.b.rotation.x=cl3(-(st||0)*vf*.00013-(vl||0)*.0003,-.14,.14);g.b.rotation.z=cl3(g.pa*.00007,-.06,.06);
- for(const w of g.sp)w.rotation.z-=vf*U/.4*dt;g.wh[0].rotation.y=g.wh[1].rotation.y=-(st||0)*.45;for(const m of g.tl)if(m.emissiveIntensity!==undefined)m.emissiveIntensity=brk?2.2:.5}
+ for(const w of g.sp)w.rotation.z-=vf*U/(g.wr||.4)*dt;g.wh[0].rotation.y=g.wh[1].rotation.y=-(st||0)*.45;for(const m of g.tl)if(m.emissiveIntensity!==undefined)m.emissiveIntensity=brk?2.2:.5}
+/* --- auto da GLB (caricato da URL) con ripiego automatico sul modello procedurale --- */
+let CARSRC="procedurale";
+const WN=/ruota/i,GLASS=/vetr|glass|finestr|parabrez|lunott/i,HEAD=/faro|fari|headl|lamp|\bled\b|drl/i,TAIL=/stop|fanal|tail|brake|posterior|retro|rear.?light/i,MIRR=/specchiett|mirror/i;
+// Orienta il modello (avanti = +X, destra = +Z), lo scala a ~4.15 m, lo appoggia a terra e monta ogni ruota in due pivot:
+// sterzo (rotazione Y, solo anteriori) e rotolamento (rotazione Z sull'asse del perno). Si ruotano i GRUPPI ruota, non le mesh interne.
+function carFromGLB(src,ghost){
+ const root=new THREE.Group(),m=src.clone(true);root.add(m);
+ const W=[];m.traverse(o=>{if(!WN.test(o.name))return;for(let p=o.parent;p&&p!==m;p=p.parent)if(WN.test(p.name))return;W.push(o)});
+ const T4={};for(const o of W){const k=o.name.toLowerCase().replace(/^.*ruota/,"").replace(/[^a-z]/g,"").slice(0,2);if(/^[ap][ds]$/.test(k)&&!T4[k])T4[k]=o}
+ if(!(T4.ad&&T4.as&&T4.pd&&T4.ps))throw new Error("ruote non riconosciute (trovati gruppi: "+W.map(o=>o.name).join(", ")+")");
+ const ws=[T4.ad,T4.as,T4.pd,T4.ps],V=()=>new THREE.Vector3(),P=o=>o.getWorldPosition(V());
+ m.updateMatrixWorld(true);let p=ws.map(P);
+ const fx=(p[0].x+p[1].x)/2-(p[2].x+p[3].x)/2,fz=(p[0].z+p[1].z)/2-(p[2].z+p[3].z)/2;
+ m.rotateOnWorldAxis(new THREE.Vector3(0,1,0),Math.atan2(fz,fx));root.updateMatrixWorld(true);p=ws.map(P);
+ if(p[0].z+p[2].z<p[1].z+p[3].z)root.scale.z=-1;                       // le ruote "destra" devono stare su +Z
+ root.updateMatrixWorld(true);let box=new THREE.Box3().setFromObject(root);root.scale.multiplyScalar(4.15/box.getSize(V()).x);
+ root.updateMatrixWorld(true);box=new THREE.Box3().setFromObject(root);p=ws.map(P);
+ root.position.set(-(p[0].x+p[1].x+p[2].x+p[3].x)/4,-box.min.y,-(p[0].z+p[1].z+p[2].z+p[3].z)/4);root.updateMatrixWorld(true);
+ const wb=new THREE.Box3().setFromObject(ws[0]),wr=Math.max(.2,Math.min(.7,(wb.max.y-wb.min.y)/2)),steer=[],spin=[];
+ for(const o of ws){const pv=new THREE.Group(),sp=new THREE.Group();pv.position.copy(P(o));pv.add(sp);pv.updateMatrixWorld(true);sp.attach(o);steer.push(pv);spin.push(sp)}
+ const tl=[],mir=[];
+ const tune=o=>{if(MIRR.test(o.name))mir.push(o);if(!o.isMesh)return;o.castShadow=!ghost;o.receiveShadow=!ghost;
+  const one=mt=>{if(ghost)return new THREE.MeshLambertMaterial({color:0x37c6ff,transparent:true,opacity:.5});const c=mt.clone(),nm=(mt.name||"")+" "+o.name;
+   if(c.isMeshStandardMaterial){c.envMap=ENV;c.envMapIntensity=.8;c.metalness=Math.min(c.metalness,.9);c.roughness=Math.max(c.roughness,.25)}
+   if(GLASS.test(nm)||c.opacity<.99){c.transparent=true;c.opacity=Math.min(c.opacity,.55);c.depthWrite=false;if(c.isMeshStandardMaterial){c.roughness=.08;c.metalness=.6}c.color.multiplyScalar(.5)}
+   if(c.emissive){if(HEAD.test(nm)){c.emissive.set(0xfff2cc);c.emissiveIntensity=1.5}else if(TAIL.test(nm)){c.emissive.set(0xff2a10);c.emissiveIntensity=.5;tl.push(c)}}
+   return c};
+  o.material=Array.isArray(o.material)?o.material.map(one):one(o.material)};
+ root.traverse(tune);for(const pv of steer)pv.traverse(tune);
+ return{root,steer,spin,wr,tl,mir}}
+function swapCar(g,k){for(const w of g.wh)g.remove(w);while(g.b.children.length)g.b.remove(g.b.children[0]);g.b.add(k.root);for(const pv of k.steer)g.add(pv);g.wh=k.steer;g.sp=k.spin;g.wr=k.wr;g.tl=k.tl;g.mir=k.mir;g.glb=true}
+function applyCarModel(src){try{const a=carFromGLB(src,false),b=carFromGLB(src,true);swapCar(me3,a);swapCar(gh3,b);CARSRC="GLB";return true}
+ catch(e){console.warn("Auto GLB non utilizzabile, resto sul modello integrato:",e);return false}}
 const skG=new THREE.BufferGeometry();skG.setAttribute("position",new THREE.BufferAttribute(new Float32Array(1900*3),3));skG.setDrawRange(0,0);const skM=new THREE.LineSegments(skG,new THREE.LineBasicMaterial({color:0x111111,transparent:true,opacity:.55}));skM.frustumCulled=false;sc3.add(skM);
 const mkP=(n,c)=>{const m=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.5,depthWrite:false}),n);m.frustumCulled=false;for(let i=0;i<n;i++){o3.scale.setScalar(.0001);o3.updateMatrix();m.setMatrixAt(i,o3.matrix)}sc3.add(m);return m};
 const sprM=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),new THREE.MeshLambertMaterial({color:0xffffff}),360);sprM.frustumCulled=false;for(let i=0;i<360;i++){o3.scale.setScalar(.0001);o3.updateMatrix();sprM.setMatrixAt(i,o3.matrix)}sc3.add(sprM);const splM=mkP(200,0xe4f5ff);

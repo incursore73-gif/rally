@@ -11,7 +11,7 @@ export const DEFAULTS={
   render:{preset:'HIGH'}
 };
 export const PRESETS={
-  HIGH:{pixelRatio:2,shadows:true,shadowMap:2048,fineStep:3.5,trees:{near:2400,far:2600},rocks:900,fogFar:5200,far:7000,lambert:false},
-  PERFORMANCE:{pixelRatio:1.25,shadows:false,shadowMap:1024,fineStep:5,trees:{near:900,far:900},rocks:350,fogFar:3200,far:4500,lambert:true}
+  HIGH:{pixelRatio:1.5,shadows:true,shadowMap:1024,fineStep:3.5,trees:{near:2400,far:2600},rocks:900,fogFar:5200,far:7000,lambert:false},
+  PERFORMANCE:{pixelRatio:1,shadows:false,shadowMap:512,fineStep:5,trees:{near:900,far:900},rocks:350,fogFar:3200,far:4500,lambert:true}
 };
 export function merge(a,b){const o=Array.isArray(a)?[...a]:{...a};for(const k in b){o[k]=b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])?merge(a[k]||{},b[k]):b[k]}return o}
