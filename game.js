@@ -91,7 +91,7 @@ function carPhys(me,inp,dt,S,env){
  const air=!!me.air,thr=inp.thr&&!air,brk=inp.brk&&!air,hb=inp.hb&&!air;
  let vf=me.vf,vl=me.vl;const sp=Math.hypot(vf,vl);
  me.br+=((brk?1:0)-me.br)*Math.min(1,dt*8);
- if(hb)me.hbT=.8;else if(me.hbT>0)me.hbT-=dt;
+ if(hb)me.hbT=1.0;else if(me.hbT>0)me.hbT-=dt;
  me.brkT=brk?(me.brkT||0)+dt:0;
  const hold=brk&&me.brkT>.2,tap=brk&&!hold;
  const trail=!hb&&tap&&Math.abs(me.st)>.04&&sp>60;
@@ -105,12 +105,12 @@ function carPhys(me,inp,dt,S,env){
  if(!air)vf-=S.srf.d*Math.min(1,vf/200)*dt;
  if(env.off&&vf>200)vf-=600*dt;
  if(env.wet){if(vf>230)vf-=(vf-230)*2.2*dt;vf=Math.max(0,vf-60*dt)}
- if(trail)vl+=me.st*560*dt*Math.min(1,(sp-55)/150);else if(pend)vl+=me.st*300*dt*Math.min(1,(sp-75)/200);
+ if(drift&&Math.abs(me.st)>.03&&sp>35)vl+=me.st*500*dt*Math.min(1,(sp-30)/130);else if(trail)vl+=me.st*560*dt*Math.min(1,(sp-55)/150);else if(pend)vl+=me.st*300*dt*Math.min(1,(sp-75)/200);
  if(thr&&over&&!brk){vf+=340*dt*Math.min(1,sp/160);vl-=Math.sign(vl||me.st)*Math.min(Math.abs(vl)*.35,40)*dt*2}
- const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(hb?.82:1)*(trail?.40:1)*(pend?.72:1);
+ const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(drift?.58:1)*(trail?.40:1)*(pend?.72:1);
  const sat=Math.max(0,Math.min(1,(Math.abs(K*vl)/Math.max(G,1)-.85)/.5));
  const ssp=Math.max(sp,50);let yaw;
- if(hb){yaw=me.st*MAXYAW*2.3*(1+(thr?.22:0))/(1+sp/740)*Math.min(1,sp/32);const lim=1.45*G0*.85/ssp;yaw=Math.max(-lim,Math.min(lim,yaw))*(1-.14*Math.min(1,Math.abs(vl)/Math.max(sp*.5,55)))}
+ if(hb){yaw=me.st*MAXYAW*3.0*(1+(thr?.28:0))/(1+sp/760)*Math.min(1,sp/28);const lim=1.75*G0/ssp;yaw=Math.max(-lim,Math.min(lim,yaw))*(1-.08*Math.min(1,Math.abs(vl)/Math.max(sp*.45,50)))}
  else{const stF=1+(thr?0:.3)+.35*me.br*(hold?1:.5)+(trail?1.35:0)+(pend?.75:0)+(me.slip>.1?me.slip*.5:0);yaw=me.st*MAXYAW*stF/(1+sp/460)*Math.min(1,sp/35)*(1-.22*sat*((trail||pend)?.28:1));const lim=((trail||pend)?.95:(hold?.45:.5))*G0/ssp,dem=Math.abs(yaw);if(dem>lim){vf-=vf*(hold?.65:.4)*(1-lim/dem)*dt;yaw=Math.sign(yaw)*lim}}
  yaw*=air?.3:1;
  const d=yaw*dt;me.h+=d;
