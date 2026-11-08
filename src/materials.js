@@ -124,19 +124,24 @@ function drawGravel(g, S, R) {
   blotches(g, S, R, 6, 20 * k, 60 * k, "40,30,20", "40,30,20", 0.1, 0.2);
 }
 function drawWear(g, W, H, R, gravel) {
-  const lanes = [0.202, 0.298, 0.702, 0.798], sig = (gravel ? 0.03 : 0.022) * W, peak = gravel ? 0.34 : 0.26, segs = 64;
+  const lanes = [0.202, 0.298, 0.702, 0.798], sig = (gravel ? 0.032 : 0.025) * W, peak = gravel ? 0.38 : 0.33, segs = 72;
   g.clearRect(0, 0, W, H);
   for (const uc of lanes) {
     const cx = uc * W;
     for (let s = 0; s < segs; s++) {
-      const y0 = s * H / segs, hh = H / segs + 1, f = 0.65 + R() * 0.5;
-      for (let x = Math.floor(cx - 3 * sig); x <= cx + 3 * sig; x++) {
+      const y0 = s * H / segs, hh = H / segs + 1, f = 0.6 + R() * 0.65;
+      for (let x = Math.floor(cx - 3.2 * sig); x <= cx + 3.2 * sig; x++) {
         const d = (x - cx) / sig, a = peak * f * Math.exp(-d * d / 2);
-        if (a < 0.01) continue;
-        g.fillStyle = `rgba(0,0,0,${a})`;
+        if (a < 0.008) continue;
+        g.fillStyle = `rgba(0,0,0,${Math.min(0.7,a)})`;
         g.fillRect(x, y0, 1, hh);
       }
     }
+  }
+  for (let i = 0; i < 14; i++) {
+    const uc = lanes[i % lanes.length] + (R() - 0.5) * 0.03, x = uc * W, y = R() * H, len = (18 + R() * 55) * (H / 512), w = 2 + R() * 3;
+    g.fillStyle = `rgba(0,0,0,${0.12 + R() * 0.18})`;
+    g.fillRect(x - w / 2, y, w, len);
   }
   for (let i = 0; i < 16; i++) {
     const x = R() * W, y = R() * H, r = 6 + R() * 18, gr = g.createRadialGradient(x, y, 0, x, y, r);

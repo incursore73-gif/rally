@@ -91,7 +91,7 @@ function carPhys(me,inp,dt,S,env){
  const air=!!me.air,thr=inp.thr&&!air,brk=inp.brk&&!air,hb=inp.hb&&!air;
  let vf=me.vf,vl=me.vl;const sp=Math.hypot(vf,vl);
  me.br+=((brk?1:0)-me.br)*Math.min(1,dt*8);
- if(hb)me.hbT=1.0;else if(me.hbT>0)me.hbT-=dt;
+ if(hb)me.hbT=.7;else if(me.hbT>0)me.hbT-=dt;
  me.brkT=brk?(me.brkT||0)+dt:0;
  const hold=brk&&me.brkT>.2,tap=brk&&!hold;
  const trail=!hb&&tap&&Math.abs(me.st)>.04&&sp>60;
@@ -105,12 +105,12 @@ function carPhys(me,inp,dt,S,env){
  if(!air)vf-=S.srf.d*Math.min(1,vf/200)*dt;
  if(env.off&&vf>200)vf-=600*dt;
  if(env.wet){if(vf>230)vf-=(vf-230)*2.2*dt;vf=Math.max(0,vf-60*dt)}
- if(drift&&Math.abs(me.st)>.03&&sp>35)vl+=me.st*500*dt*Math.min(1,(sp-30)/130);else if(trail)vl+=me.st*560*dt*Math.min(1,(sp-55)/150);else if(pend)vl+=me.st*300*dt*Math.min(1,(sp-75)/200);
+ if(drift&&Math.abs(me.st)>.03&&sp>35)vl+=me.st*280*dt*Math.min(1,(sp-30)/130);else if(trail)vl+=me.st*420*dt*Math.min(1,(sp-55)/150);else if(pend)vl+=me.st*240*dt*Math.min(1,(sp-75)/200);
  if(thr&&over&&!brk){vf+=340*dt*Math.min(1,sp/160);vl-=Math.sign(vl||me.st)*Math.min(Math.abs(vl)*.35,40)*dt*2}
- const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(drift?.58:1)*(trail?.40:1)*(pend?.72:1);
+ const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(drift?.72:1)*(trail?.48:1)*(pend?.78:1);
  const sat=Math.max(0,Math.min(1,(Math.abs(K*vl)/Math.max(G,1)-.85)/.5));
  const ssp=Math.max(sp,50);let yaw;
- if(hb){yaw=me.st*MAXYAW*3.0*(1+(thr?.28:0))/(1+sp/760)*Math.min(1,sp/28);const lim=1.75*G0/ssp;yaw=Math.max(-lim,Math.min(lim,yaw))*(1-.08*Math.min(1,Math.abs(vl)/Math.max(sp*.45,50)))}
+ if(hb){yaw=me.st*MAXYAW*2.2*(1+(thr?.22:0))/(1+sp/780)*Math.min(1,sp/30);const lim=1.45*G0/ssp;yaw=Math.max(-lim,Math.min(lim,yaw))*(1-.11*Math.min(1,Math.abs(vl)/Math.max(sp*.45,50)))}
  else{const stF=1+(thr?0:.3)+.35*me.br*(hold?1:.5)+(trail?1.35:0)+(pend?.75:0)+(me.slip>.1?me.slip*.5:0);yaw=me.st*MAXYAW*stF/(1+sp/460)*Math.min(1,sp/35)*(1-.22*sat*((trail||pend)?.28:1));const lim=((trail||pend)?.95:(hold?.45:.5))*G0/ssp,dem=Math.abs(yaw);if(dem>lim){vf-=vf*(hold?.65:.4)*(1-lim/dem)*dt;yaw=Math.sign(yaw)*lim}}
  yaw*=air?.3:1;
  const d=yaw*dt;me.h+=d;
@@ -432,7 +432,8 @@ function step(dt){
  else if(sec&&sec.flash>0)sec.flash-=dt;
  /* particles & skids */
  const sp=Math.hypot(me.vf,me.vl),cs=Math.cos(me.h),sn=Math.sin(me.h);
- if(!me.air&&me.slip>.22&&sp>45){for(let q=0;q<7;q++)addSpray(me.x-cs*26,me.y-sn*26,me.slip,0);
+ const braking=me.br>.55&&sp>65,skidding=!me.air&&sp>35&&(me.slip>.18||braking||me.hbT>0);
+ if(skidding){for(let q=0;q<(braking?5:7);q++)addSpray(me.x-cs*26,me.y-sn*26,Math.max(me.slip,braking?.35:0),0);
   const nx=-sn*16,ny=cs*16,rx=me.x-cs*22,ry=me.y-sn*22,cur=[rx+nx,ry+ny,rx-nx,ry-ny];
   if(lastSk){skids.push([lastSk[0],lastSk[1],cur[0],cur[1]],[lastSk[2],lastSk[3],cur[2],cur[3]]);if(skids.length>1400)skids.splice(0,2)}lastSk=cur}else lastSk=null;
  if(me.wet&&sp>70&&!me.air)for(let q=0;q<2;q++){const a=me.h+Math.PI+(Math.random()-.5)*2.6,v=60+Math.random()*160;spl.push({x:me.x,y:me.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,r:5+Math.random()*7})}
@@ -558,7 +559,7 @@ function carFromGLB(src,ghost){
 function swapCar(g,k){for(const w of g.wh)g.remove(w);while(g.b.children.length)g.b.remove(g.b.children[0]);g.b.add(k.root);for(const pv of k.steer)g.add(pv);g.wh=k.steer;g.sp=k.spin;g.wr=k.wr;g.tl=k.tl;g.mir=k.mir;g.glb=true}
 function applyCarModel(src){try{const a=carFromGLB(src,false),b=carFromGLB(src,true);swapCar(me3,a);swapCar(gh3,b);CARSRC="GLB";return true}
  catch(e){console.warn("Auto GLB non utilizzabile, resto sul modello integrato:",e);return false}}
-const skG=new THREE.BufferGeometry();skG.setAttribute("position",new THREE.BufferAttribute(new Float32Array(1900*3),3));skG.setDrawRange(0,0);const skM=new THREE.LineSegments(skG,new THREE.LineBasicMaterial({color:0x111111,transparent:true,opacity:.55}));skM.frustumCulled=false;sc3.add(skM);
+const skG=new THREE.BufferGeometry();skG.setAttribute("position",new THREE.BufferAttribute(new Float32Array(3000*3),3));skG.setDrawRange(0,0);const skM=new THREE.LineSegments(skG,new THREE.LineBasicMaterial({color:0x141414,transparent:true,opacity:.62,depthWrite:false}));skM.frustumCulled=false;sc3.add(skM);
 const mkP=(n,c)=>{const m=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.5,depthWrite:false}),n);m.frustumCulled=false;for(let i=0;i<n;i++){o3.scale.setScalar(.0001);o3.updateMatrix();m.setMatrixAt(i,o3.matrix)}sc3.add(m);return m};
 const sprM=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),new THREE.MeshLambertMaterial({color:0xffffff}),360);sprM.frustumCulled=false;for(let i=0;i<360;i++){o3.scale.setScalar(.0001);o3.updateMatrix();sprM.setMatrixAt(i,o3.matrix)}sc3.add(sprM);const splM=mkP(200,0xe4f5ff);
 const mkD=(n,op,geo,add)=>{const m=new THREE.InstancedMesh(geo,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:op,depthWrite:false,blending:add?THREE.AdditiveBlending:THREE.NormalBlending}),n);m.frustumCulled=false;const w=new THREE.Color(1,1,1);for(let i=0;i<n;i++){o3.scale.setScalar(.0001);o3.updateMatrix();m.setMatrixAt(i,o3.matrix);m.setColorAt(i,w)}m.instanceColor.needsUpdate=true;sc3.add(m);return m};
