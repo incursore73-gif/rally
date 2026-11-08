@@ -24,7 +24,9 @@ const ST=[
  {n:"Bosco dell'abbazia",srf:"tarmac",seed:71,len:19000,hw:140,hwg:245,sm:200,sv:500,alp:{h:8,hr:12.5,rn:1,th:"forest",len:2300,amp:10,l1:250,l2:130,g:0.14},mix:{hair:4,vh:2,c90:3,sweep:3,chic:2,kink:2}},
  {n:"Tramonto sul mare",srf:"tarmac",seed:73,len:22000,hw:140,hwg:250,sm:220,sv:520,alp:{h:8,hr:17.4,rn:0,th:"coast",len:2600,amp:7,l1:300,l2:170,g:0.12},mix:{sweep:5,c90:3,hair:2,vh:2,chic:3,kink:3}},
  {n:"Canyon d'asfalto",srf:"tarmac",seed:79,len:20000,hw:140,hwg:226,sm:180,sv:450,alp:{h:8,hr:9,rn:0,th:"canyon",len:2000,amp:13,l1:220,l2:115,g:0.16},mix:{vh:4,c90:4,hair:3,chic:4,sweep:1,kink:1}},
- {n:"Panoramica alta",srf:"tarmac",seed:83,len:26000,hw:140,hwg:240,sm:220,sv:520,alp:{h:10,hr:20.2,rn:0,th:"alpine",len:0,amp:12,l1:340,l2:150,g:0.15},mix:{hair:4,vh:3,c90:3,sweep:4,chic:3,kink:2}}];
+ {n:"Panoramica alta",srf:"tarmac",seed:83,len:26000,hw:140,hwg:240,sm:220,sv:520,alp:{h:10,hr:20.2,rn:0,th:"alpine",len:0,amp:12,l1:340,l2:150,g:0.15},mix:{hair:4,vh:3,c90:3,sweep:4,chic:3,kink:2}},
+ {n:"Passo delle Strettoie",srf:"tarmac",seed:97,len:20000,hw:116,hwg:212,sm:175,sv:450,alp:{h:9,hr:14.5,rn:0,th:"alpine",len:0,amp:24,l1:170,l2:85,g:0.19},mix:{hair:6,vh:4,c90:4,sweep:1,chic:3,kink:2}},
+ {n:"Valico dei Dossi",srf:"gravel",seed:101,len:22000,hw:124,hwg:224,sm:185,sv:470,alp:{h:9,hr:10.5,rn:0,th:"alpine",len:0,amp:20,l1:200,l2:100,g:0.18},mix:{hair:4,vh:4,c90:3,sweep:2,chic:3,kink:2}}];
 const RALLY=[0,1,2,3,4,5];
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 /*GEN*/
