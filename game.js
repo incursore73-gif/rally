@@ -92,24 +92,26 @@ function carPhys(me,inp,dt,S,env){
  let vf=me.vf,vl=me.vl;const sp=Math.hypot(vf,vl);
  me.br+=((brk?1:0)-me.br)*Math.min(1,dt*8);
  if(hb)me.hbT=.8;else if(me.hbT>0)me.hbT-=dt;
- const trail=!hb&&brk&&Math.abs(me.st)>.04&&sp>60;
- if(trail)me.brT=Math.min(.75,(me.brT||0)+dt*4.2);else if(brk&&sp>110)me.brT=Math.min(.55,(me.brT||0)+dt*2.2);else if(me.brT>0)me.brT=Math.max(0,me.brT-dt*(thr?3.8:2.0));
+ me.brkT=brk?(me.brkT||0)+dt:0;
+ const hold=brk&&me.brkT>.2,tap=brk&&!hold;
+ const trail=!hb&&tap&&Math.abs(me.st)>.04&&sp>60;
+ if(trail)me.brT=Math.min(.8,(me.brT||0)+dt*4.8);else if(brk&&sp>110)me.brT=Math.min(.55,(me.brT||0)+dt*2.0);else if(me.brT>0)me.brT=Math.max(0,me.brT-dt*(thr?3.8:2.0));
  const pend=!hb&&!brk&&me.brT>.04&&thr&&sp>80&&Math.abs(me.st)>.04;
  const drift=hb||me.hbT>0,over=drift||pend||trail;
  if(thr)vf+=1500*(1-vf/VMAX)*(1-.5*me.slip*(over?.08:1))*me.pw*dt;
- if(brk)vf=Math.max(0,vf-1100*(.4+.6*me.br)*dt*(trail?.10:1));
+ if(brk)vf=Math.max(0,vf-1100*(.4+.6*me.br)*dt*(trail?.05:hold?1:(Math.abs(me.st)>.04&&sp>60?.25:.85)));
  if(!thr&&!brk&&!air)vf-=(90+vf*.6)*dt*(over?.55:1);
  if(hb)vf=Math.max(0,vf-160*dt);
  if(!air)vf-=S.srf.d*Math.min(1,vf/200)*dt;
  if(env.off&&vf>200)vf-=600*dt;
  if(env.wet){if(vf>230)vf-=(vf-230)*2.2*dt;vf=Math.max(0,vf-60*dt)}
- if(trail)vl+=me.st*520*dt*Math.min(1,(sp-55)/160);else if(pend)vl+=me.st*300*dt*Math.min(1,(sp-75)/200);
- if(thr&&over&&!brk){vf+=320*dt*Math.min(1,sp/160);vl-=Math.sign(vl||me.st)*Math.min(Math.abs(vl)*.35,40)*dt*2}
- const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(hb?.82:1)*(trail?.42:1)*(pend?.72:1);
+ if(trail)vl+=me.st*560*dt*Math.min(1,(sp-55)/150);else if(pend)vl+=me.st*300*dt*Math.min(1,(sp-75)/200);
+ if(thr&&over&&!brk){vf+=340*dt*Math.min(1,sp/160);vl-=Math.sign(vl||me.st)*Math.min(Math.abs(vl)*.35,40)*dt*2}
+ const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(hb?.82:1)*(trail?.40:1)*(pend?.72:1);
  const sat=Math.max(0,Math.min(1,(Math.abs(K*vl)/Math.max(G,1)-.85)/.5));
  const ssp=Math.max(sp,50);let yaw;
  if(hb){yaw=me.st*MAXYAW*2.3*(1+(thr?.22:0))/(1+sp/740)*Math.min(1,sp/32);const lim=1.45*G0*.85/ssp;yaw=Math.max(-lim,Math.min(lim,yaw))*(1-.14*Math.min(1,Math.abs(vl)/Math.max(sp*.5,55)))}
- else{const stF=1+(thr?0:.3)+.35*me.br+(trail?1.25:0)+(pend?.75:0)+(me.slip>.1?me.slip*.5:0);yaw=me.st*MAXYAW*stF/(1+sp/460)*Math.min(1,sp/35)*(1-.22*sat*((trail||pend)?.3:1));const lim=((trail||pend)?.95:.5)*G0/ssp,dem=Math.abs(yaw);if(dem>lim){vf-=vf*.4*(1-lim/dem)*dt;yaw=Math.sign(yaw)*lim}}
+ else{const stF=1+(thr?0:.3)+.35*me.br*(hold?1:.5)+(trail?1.35:0)+(pend?.75:0)+(me.slip>.1?me.slip*.5:0);yaw=me.st*MAXYAW*stF/(1+sp/460)*Math.min(1,sp/35)*(1-.22*sat*((trail||pend)?.28:1));const lim=((trail||pend)?.95:(hold?.45:.5))*G0/ssp,dem=Math.abs(yaw);if(dem>lim){vf-=vf*(hold?.65:.4)*(1-lim/dem)*dt;yaw=Math.sign(yaw)*lim}}
  yaw*=air?.3:1;
  const d=yaw*dt;me.h+=d;
  const nf=vf*Math.cos(d)+vl*Math.sin(d),nl=vl*Math.cos(d)-vf*Math.sin(d);vf=nf;vl=nl;
@@ -294,7 +296,7 @@ function newSec(){return{i:0,cum:[null,null,null],t:[null,null,null],cmp:[null,n
 function startLevel(i){
  initAudio();bgmStop();tmapClear();lvl=i;S=buildStage(ST[i]);{const ln=Math.round(S.N*DS*U);save.len=save.len||{};if(save.len[i]!==ln){save.len[i]=ln;persist()}}
  const p=S.P[2];
- me={x:p.x,y:p.y,h:p.h,vf:0,vl:0,st:0,slip:0,br:0,gl:0,px:p.x,py:p.y,idx:2,pidx:2,lat:0,air:null,wet:false,gear:1,rev:0,pw:1,shiftT:0,hbT:0,brT:0};
+ me={x:p.x,y:p.y,h:p.h,vf:0,vl:0,st:0,slip:0,br:0,gl:0,px:p.x,py:p.y,idx:2,pidx:2,lat:0,air:null,wet:false,gear:1,rev:0,pw:1,shiftT:0,hbT:0,brT:0,brkT:0};
  finD=[S.total/3,S.total*2/3];camH=p.h;
  raceT=0;falls=0;cd=3.4;cdHold=false;goT=0;msgT=0;state="countdown";rec=[];recT=0;gi=0;gd=0;sec=newSec();secLog=[];spray=[];skids=[];spl=[];lastSk=null;inCrowd=false;
  bestG=loadGhost(i);ghost=bestG;
