@@ -276,7 +276,7 @@ export function buildRoadMeshes(R, M) {
 }
 export function buildFurniture(R, heightAt, M, cfg) {
   const g = new THREE.Group(), hw = R.hw, sh = R.shoulder, N = R.N, ds = cfg.road.sampleStep, rl = cfg.rails, off = hw + sh - 0.15, segs = [], dummy = new THREE.Object3D();
-  const postM = [], delM = [], wallM = [], chevM = [], FL = {};
+  const postM = [], delM = [], refM = [], railRefM = [], wallM = [], chevM = [], FL = {};
   for (const side of [-1, 1]) {
     const flag = new Uint8Array(N);
     for (let i = 0; i < N; i++) {
@@ -291,10 +291,7 @@ export function buildFurniture(R, heightAt, M, cfg) {
     }
     FL[side] = flag;
     for (let i = 0; i < N; ) {
-      if (!flag[i]) {
-        i++;
-        continue;
-      }
+      if (!flag[i]) { i++; continue; }
       let j = i;
       while (j < N && flag[j]) j++;
       if (j - i >= 6) {
@@ -303,13 +300,19 @@ export function buildFurniture(R, heightAt, M, cfg) {
         segs.push({ side, points: pts });
         const step = Math.round(rl.postSpacing / ds);
         for (let k = i; k < j; k += step) postM.push([R.X[k] + R.NX[k] * side * (off + 0.15), R.Y[k] + 0.45, R.Z[k] + R.NZ[k] * side * (off + 0.15)]);
+        for (let k = i + 2; k < j - 2; k += Math.max(3, step)) {
+          const x = R.X[k] + R.NX[k] * side * (off - 0.08), z = R.Z[k] + R.NZ[k] * side * (off - 0.08);
+          railRefM.push([x, R.Y[k] + 0.58, z, Math.atan2(-R.TZ[k], R.TX[k])]);
+        }
       }
       i = j;
     }
     for (let i = 0; i < N; i += 10) {
       if (flag[i]) continue;
       const o = hw + sh + 0.3;
-      delM.push([R.X[i] + R.NX[i] * side * o, R.Y[i] + 0.45, R.Z[i] + R.NZ[i] * side * o]);
+      const dx = R.X[i] + R.NX[i] * side * o, dz = R.Z[i] + R.NZ[i] * side * o, dy = R.Y[i] + 0.45;
+      delM.push([dx, dy, dz]);
+      refM.push([dx, dy + 0.42, dz]);
     }
     for (let i = 0; i < N; i += 2) {
       const o = hw + sh + 0.3, up = heightAt(R.X[i] + R.NX[i] * side * (o + 2), R.Z[i] + R.NZ[i] * side * (o + 2)) - R.Y[i];
@@ -324,9 +327,7 @@ export function buildFurniture(R, heightAt, M, cfg) {
       for (let k = 0; k < s.points.length; k++) {
         const p = s.points[k];
         P.push(p.x, p.y, p.z, p.x, p.y + 0.32, p.z);
-        if (k < s.points.length - 1) {
-          I.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
-        }
+        if (k < s.points.length - 1) I.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
         b += 2;
       }
     }
@@ -349,8 +350,10 @@ export function buildFurniture(R, heightAt, M, cfg) {
     m.receiveShadow = true;
     g.add(m);
   };
-  inst(new THREE.BoxGeometry(0.1, 0.9, 0.1), M.post, postM);
-  inst(new THREE.BoxGeometry(0.09, 0.9, 0.09), M.delin, delM);
+  inst(new THREE.BoxGeometry(0.12, 0.85, 0.1), M.post, postM);
+  inst(new THREE.BoxGeometry(0.06, 0.95, 0.06), M.delin, delM);
+  inst(new THREE.BoxGeometry(0.08, 0.14, 0.03), M.reflect, refM);
+  inst(new THREE.BoxGeometry(0.1, 0.08, 0.03), M.reflect, railRefM, true);
   inst(new THREE.BoxGeometry(3, 0.8, 0.55), M.wall, wallM, true);
   for (const h of R.hairpins) {
     for (let k = -3; k <= 3; k++) {

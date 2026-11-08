@@ -229,11 +229,12 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
     terrain: mk({ vertexColors: true, map: detail, ...preset.lambert || !detail ? {} : { bumpMap: detail, bumpScale: 0.22 }, side: THREE.DoubleSide }, 0.98),
     rock: mk({ color: 9144192, map: rockTex, vertexColors: true, flatShading: true }, 0.96),
     tree: mk({ vertexColors: true }, 1),
-    rail: mk({ color: 13224393, side: THREE.DoubleSide }, 0.32, 0.72),
-    post: mk({ color: 9605778 }, 0.55, 0.45),
-    wall: mk({ color: 9341570, flatShading: true }, 1),
-    sign: mk({ color: 15909376 }, 0.6),
-    delin: mk({ color: 16053488 }, 0.7)
+    rail: mk({ color: 13816530, side: THREE.DoubleSide }, 0.28, 0.78),
+    post: mk({ color: 7763574 }, 0.48, 0.55),
+    wall: mk({ color: 9737364, flatShading: true }, 1),
+    sign: mk({ color: 16737792, emissive: 0x331100 }, 0.55),
+    delin: mk({ color: 15132390 }, 0.6),
+    reflect: mk({ color: 16724530, emissive: 0x551111 }, 0.35, 0.15)
   };
   if (macroTex) {
     const macro = (mat) => {
