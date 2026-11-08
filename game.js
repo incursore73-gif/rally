@@ -92,24 +92,24 @@ function carPhys(me,inp,dt,S,env){
  let vf=me.vf,vl=me.vl;const sp=Math.hypot(vf,vl);
  me.br+=((brk?1:0)-me.br)*Math.min(1,dt*8);
  if(hb)me.hbT=.8;else if(me.hbT>0)me.hbT-=dt;
- const trail=!hb&&brk&&Math.abs(me.st)>.05&&sp>70;
- if(trail)me.brT=Math.min(.65,(me.brT||0)+dt*3.2);else if(brk&&sp>110)me.brT=Math.min(.55,(me.brT||0)+dt*2.2);else if(me.brT>0)me.brT=Math.max(0,me.brT-dt*(thr?3.2:1.8));
- const pend=!hb&&!brk&&me.brT>.05&&thr&&sp>90&&Math.abs(me.st)>.05;
+ const trail=!hb&&brk&&Math.abs(me.st)>.04&&sp>60;
+ if(trail)me.brT=Math.min(.75,(me.brT||0)+dt*4.2);else if(brk&&sp>110)me.brT=Math.min(.55,(me.brT||0)+dt*2.2);else if(me.brT>0)me.brT=Math.max(0,me.brT-dt*(thr?3.8:2.0));
+ const pend=!hb&&!brk&&me.brT>.04&&thr&&sp>80&&Math.abs(me.st)>.04;
  const drift=hb||me.hbT>0,over=drift||pend||trail;
- if(thr)vf+=1500*(1-vf/VMAX)*(1-.5*me.slip*(over?.12:1))*me.pw*dt;
- if(brk)vf=Math.max(0,vf-1100*(.4+.6*me.br)*dt*(trail?.28:1));
- if(!thr&&!brk&&!air)vf-=(90+vf*.6)*dt;
- if(hb)vf=Math.max(0,vf-220*dt);
+ if(thr)vf+=1500*(1-vf/VMAX)*(1-.5*me.slip*(over?.08:1))*me.pw*dt;
+ if(brk)vf=Math.max(0,vf-1100*(.4+.6*me.br)*dt*(trail?.10:1));
+ if(!thr&&!brk&&!air)vf-=(90+vf*.6)*dt*(over?.55:1);
+ if(hb)vf=Math.max(0,vf-160*dt);
  if(!air)vf-=S.srf.d*Math.min(1,vf/200)*dt;
  if(env.off&&vf>200)vf-=600*dt;
  if(env.wet){if(vf>230)vf-=(vf-230)*2.2*dt;vf=Math.max(0,vf-60*dt)}
- if(trail)vl+=me.st*340*dt*Math.min(1,(sp-65)/180);else if(pend)vl+=me.st*200*dt*Math.min(1,(sp-85)/220);
- if(thr&&over&&!brk)vf+=180*dt*Math.min(1,sp/180);
- const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(hb?.85:1)*(trail?.55:1)*(pend?.78:1);
+ if(trail)vl+=me.st*520*dt*Math.min(1,(sp-55)/160);else if(pend)vl+=me.st*300*dt*Math.min(1,(sp-75)/200);
+ if(thr&&over&&!brk){vf+=320*dt*Math.min(1,sp/160);vl-=Math.sign(vl||me.st)*Math.min(Math.abs(vl)*.35,40)*dt*2}
+ const G0=S.srf.G*(1-.2*me.br)*(env.off?.6:1)*(env.verge?.55:1)*(env.wet?.5:1)*(RAIN?.84:1),G=G0*(hb?.82:1)*(trail?.42:1)*(pend?.72:1);
  const sat=Math.max(0,Math.min(1,(Math.abs(K*vl)/Math.max(G,1)-.85)/.5));
  const ssp=Math.max(sp,50);let yaw;
- if(hb){yaw=me.st*MAXYAW*2.15*(1+(thr?.18:0))/(1+sp/720)*Math.min(1,sp/35);const lim=1.4*G0*.85/ssp;yaw=Math.max(-lim,Math.min(lim,yaw))*(1-.18*Math.min(1,Math.abs(vl)/Math.max(sp*.5,55)))}
- else{const stF=1+(thr?0:.3)+.4*me.br+(trail?.95:0)+(pend?.6:0)+(me.slip>.12?me.slip*.4:0);yaw=me.st*MAXYAW*stF/(1+sp/440)*Math.min(1,sp/38)*(1-.3*sat*((trail||pend)?.4:1));const lim=((trail||pend)?.85:.5)*G0/ssp,dem=Math.abs(yaw);if(dem>lim){vf-=vf*.5*(1-lim/dem)*dt;yaw=Math.sign(yaw)*lim}}
+ if(hb){yaw=me.st*MAXYAW*2.3*(1+(thr?.22:0))/(1+sp/740)*Math.min(1,sp/32);const lim=1.45*G0*.85/ssp;yaw=Math.max(-lim,Math.min(lim,yaw))*(1-.14*Math.min(1,Math.abs(vl)/Math.max(sp*.5,55)))}
+ else{const stF=1+(thr?0:.3)+.35*me.br+(trail?1.25:0)+(pend?.75:0)+(me.slip>.1?me.slip*.5:0);yaw=me.st*MAXYAW*stF/(1+sp/460)*Math.min(1,sp/35)*(1-.22*sat*((trail||pend)?.3:1));const lim=((trail||pend)?.95:.5)*G0/ssp,dem=Math.abs(yaw);if(dem>lim){vf-=vf*.4*(1-lim/dem)*dt;yaw=Math.sign(yaw)*lim}}
  yaw*=air?.3:1;
  const d=yaw*dt;me.h+=d;
  const nf=vf*Math.cos(d)+vl*Math.sin(d),nl=vl*Math.cos(d)-vf*Math.sin(d);vf=nf;vl=nl;
