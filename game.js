@@ -18,7 +18,7 @@ const ST=[
  {n:"Passo alpino",srf:"tarmac",seed:41,len:18000,hw:140,hwg:253,sm:200,sv:520,alp:{h:8,hr:15.5,rn:0,th:"alpine",len:0,amp:14,l1:300,l2:150,g:0.15},mix:{hair:3,vh:2,c90:3,sweep:3,chic:2,kink:2}},
  {n:"Foresta del nord",srf:"gravel",seed:47,len:19000,hw:140,hwg:236,sm:200,sv:520,alp:{h:8,hr:11,rn:1,th:"forest",len:2300,amp:10,l1:240,l2:130,g:0.14},mix:{hair:3,vh:3,c90:3,sweep:2,chic:3,kink:1}},
  {n:"Gola rossa",srf:"gravel",seed:53,len:18000,hw:140,hwg:264,sm:200,sv:520,alp:{h:8,hr:16,rn:0,th:"canyon",len:2100,amp:12,l1:260,l2:120,g:0.16},mix:{hair:4,vh:2,c90:2,sweep:4,chic:2,kink:2}},
- {n:"Colline d'autunno",srf:"gravel",seed:59,len:20000,hw:140,hwg:231,sm:180,sv:450,alp:{h:8,hr:17.2,rn:1,th:"autumn",len:2400,amp:11,l1:200,l2:110,g:0.15},mix:{hair:6,vh:3,c90:2,sweep:1,chic:1,kink:1}},
+ {n:"Cresta del sole",srf:"tarmac",seed:64,len:21000,hw:140,hwg:244,sm:210,sv:500,alp:{h:8,hr:12.5,rn:0,th:"alpine",len:0,amp:13,l1:280,l2:140,g:0.15},mix:{hair:5,vh:4,c90:3,sweep:3,chic:3,kink:2}},
  {n:"Costa a strapiombo",srf:"tarmac",seed:61,len:21000,hw:140,hwg:226,sm:300,sv:520,alp:{h:8,hr:14,rn:0,th:"coast",len:2500,amp:8,l1:280,l2:140,g:0.13},mix:{hair:2,vh:2,c90:3,sweep:3,chic:4,kink:2}},
  {n:"Gran passo",srf:"gravel",seed:67,len:28000,hw:140,hwg:236,sm:240,sv:520,alp:{h:11,hr:16.2,rn:0,th:"alpine",len:0,amp:15,l1:320,l2:160,g:0.16},mix:{hair:4,vh:3,c90:3,sweep:3,chic:3,kink:2}},
  {n:"Bosco dell'abbazia",srf:"tarmac",seed:71,len:19000,hw:140,hwg:245,sm:200,sv:500,alp:{h:8,hr:12.5,rn:1,th:"forest",len:2300,amp:10,l1:250,l2:130,g:0.14},mix:{hair:4,vh:2,c90:3,sweep:3,chic:2,kink:2}},
