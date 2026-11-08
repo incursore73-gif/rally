@@ -211,12 +211,12 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
   }, null, 2));
   const rockTex = cachedTex("r" + S, () => tex(128, 128, (g) => drawRock(g, 128, rng32(77)), null, 4));
   const M = {
-    asphalt: mk({ color: asphaltTex ? 16777215 : gravel ? 9075298 : 3816512, map: asphaltTex, ...preset.lambert || !asphaltTex ? {} : { bumpMap: asphaltTex, bumpScale: 0.55 }, side: THREE.DoubleSide }, 0.82),
-    wear: mk({ color: 0, map: wearTex, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }, 0.9),
-    shoulder: mk({ color: shoulderTex ? 16777215 : 7301724, map: shoulderTex, side: THREE.DoubleSide }, 1),
+    asphalt: mk({ color: asphaltTex ? 16053492 : gravel ? 8618883 : 3487029, map: asphaltTex, ...preset.lambert || !asphaltTex ? {} : { bumpMap: asphaltTex, bumpScale: 0.6 }, side: THREE.DoubleSide }, 0.86),
+    wear: mk({ color: 0, map: wearTex, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }, 0.92),
+    shoulder: mk({ color: shoulderTex ? 15000804 : 7039851, map: shoulderTex, side: THREE.DoubleSide }, 0.98),
     line: mk({ color: 15263968, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }, 0.7),
-    terrain: mk({ vertexColors: true, map: detail, side: THREE.DoubleSide }, 1),
-    rock: mk({ color: 9144192, map: rockTex, vertexColors: true, flatShading: true }, 1),
+    terrain: mk({ vertexColors: true, map: detail, ...preset.lambert || !detail ? {} : { bumpMap: detail, bumpScale: 0.22 }, side: THREE.DoubleSide }, 0.98),
+    rock: mk({ color: 9144192, map: rockTex, vertexColors: true, flatShading: true }, 0.96),
     tree: mk({ vertexColors: true }, 1),
     rail: mk({ color: 12106946, side: THREE.DoubleSide }, 0.45, 0.6),
     post: mk({ color: 9080468 }, 0.6, 0.4),

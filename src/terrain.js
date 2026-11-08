@@ -31,19 +31,22 @@ export function createTerrain(cfg, natural, road, preset) {
   const th = cfg.themeDef || THEMES.alpine, pl = th.pal, sea = th.terrain.sea ? road.minY - 8 : null, low = road.minY - 25, top = road.maxY + 10, C = (h) => new THREE.Color(h), tmp = new THREE.Color();
   const P = { gr: C(pl.gr), me: C(pl.me), sc: C(pl.sc), ro: C(pl.ro), dk: C(pl.dk), hz: C(pl.hz), snow: C(pl.snow || "#ffffff"), sand: C(pl.sand || "#e0d3a8"), sn: pl.sn, strata: pl.strata, strataF: pl.strataF };
   function colorAt(x, y, z, ny, far, out) {
-    const r2 = nz.fbm(x * 0.02, z * 0.02, 3), a = ss(low, top + 60, y + r2 * 18), rockT = ss(0.84, 0.55, ny);
-    out.copy(P.gr).lerp(P.me, a);
-    if (P.sn) out.lerp(P.sc, ss(top - 10, top + 90, y + r2 * 15));
+    const r2 = nz.fbm(x * 0.02, z * 0.02, 3), r3 = nz.fbm(x * 0.045 + 7, z * 0.045, 2);
+    const a = ss(low, top + 60, y + r2 * 18), rockT = ss(0.88, 0.52, ny), snowN = ss(0.2, 0.85, ny);
+    out.copy(P.gr).lerp(P.me, a * 0.85 + r3 * 0.25);
+    out.lerp(P.me, r3 * 0.18);
+    if (P.sn) out.lerp(P.sc, ss(top - 15, top + 80, y + r2 * 16));
     out.lerp(P.ro, rockT);
-    out.multiplyScalar(1 + (P.strata || 0.08) * Math.sin(y * (P.strataF || 1.1) + r2 * 6) * rockT);
-    if (rockT > 0.6) out.lerp(P.dk, 0.25 * (0.5 + 0.5 * Math.sin(y * 0.37 + r2 * 4)));
-    if (P.sn && y > top + 150 && ny > 0.5) out.lerp(P.snow, ss(top + 150, top + 230, y + r2 * 20));
+    out.multiplyScalar(0.94 + 0.14 * r3 + (P.strata || 0.08) * Math.sin(y * (P.strataF || 1.1) + r2 * 6) * rockT);
+    if (rockT > 0.55) out.lerp(P.dk, (0.18 + 0.22 * (0.5 + 0.5 * Math.sin(y * 0.37 + r2 * 4))) * rockT);
+    out.multiplyScalar(0.88 + 0.24 * ny);
+    if (P.sn && y > top + 135) out.lerp(P.snow, ss(top + 135, top + 235, y + r2 * 22) * snowN);
     if (sea !== null) {
       const d = y - sea;
       if (d < -1.5) out.lerp(P.dk, 0.7);
       else if (d < 2.5) out.lerp(P.sand, ss(2.5, -0.5, d) * 0.9);
     }
-    if (far) out.lerp(P.hz, ss(500, 2800, Math.hypot(x, z + 800)) * 0.85);
+    if (far) out.lerp(P.hz, ss(450, 2600, Math.hypot(x, z + 800)) * 0.78);
   }
   function grid(x0, z0, x1, z1, step, hf, skip, far) {
     const nx = Math.ceil((x1 - x0) / step), nzz = Math.ceil((z1 - z0) / step), sx = (x1 - x0) / nx, sz = (z1 - z0) / nzz, V = (nx + 1) * (nzz + 1), pos = new Float32Array(V * 3), uv = new Float32Array(V * 2);

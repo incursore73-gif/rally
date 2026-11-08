@@ -2,9 +2,10 @@ export var THEMES = {
   alpine: {
     road: { style: "switchback" },
     terrain: {},
-    pal: { gr: "#566b3a", me: "#7d8a55", sc: "#8d8a7e", ro: "#77746d", dk: "#55524c", sn: true, snow: "#eef2f6", hz: "#93a5bd" },
-    veg: { type: "conifer", density: 1, treeLine: true, hsl: [0.27, 0.33, 0.35, 0.5, 0.7, 1.15] },
-    rock: 9144192,
+    pal: { gr: "#4f6834", me: "#76864a", sc: "#7f8378", ro: "#6f6d66", dk: "#45433e", sn: true, snow: "#f1f5f9", hz: "#8fa4c2", strata: 0.12, strataF: 1.25 },
+    veg: { type: "conifer", density: 1.15, treeLine: true, hsl: [0.26, 0.35, 0.28, 0.55, 0.2, 0.46] },
+    rock: 7829367,
+    fogK: 0.92,
     gorgeK: 1
   },
   forest: {

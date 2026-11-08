@@ -695,7 +695,7 @@ function camDyn(dt,fr){
  camRl+=(cl3(lx*.010+(me.st||0)*.035,-.065,.065)*Math.min(1,fr*1.8)-camRl)*Math.min(1,dt*4);
  camOf+=(-cl3(me.vl*.0035,-1.1,1.1)-camOf)*Math.min(1,dt*4)}
 function vigUpd(fr){if(!vigEl)return;const o=(state==="race"||state==="countdown")?Math.max(0,Math.min(.55,(fr-.3)*.9)):0;if(Math.abs(o-vigO)>.015){vigO=o;vigEl.style.opacity=o}}
-function draw3d(){if(bS!==S)build3();R3.toneMappingExposure=1.3*(SET.bright||1);const nw=performance.now(),dt3=Math.min(.05,(nw-lt3)/1000)||.016;lt3=nw;const fr=Math.min(1,Math.max(0,me.vf)/VMAX);
+function draw3d(){if(bS!==S)build3();R3.toneMappingExposure=1.08*(SET.bright||1);const nw=performance.now(),dt3=Math.min(.05,(nw-lt3)/1000)||.016;lt3=nw;const fr=Math.min(1,Math.max(0,me.vf)/VMAX);
  {const bx=me.x*U,bz=me.y*U;blobM.visible=!me.air&&state!=="menu";blobM.position.set(bx,hg(bx,bz)+.06,bz);blobM.rotation.set(-Math.PI/2,-me.h,0);blobM.scale.set(2.5,1.15,1)}
  put(me3,me.x,me.y,me.h,me.vl,me.st,me.vf,dt3,state==="race"&&!racingThr()&&me.vf>30||me.hbT>0);{const rl=rampLift(me.idx);if(me.air){const u=me.air.t/me.air.T;me3.position.y+=(.55+me.air.h*.8)*(1-u)+4*u*(1-u)*me.air.h*1.8;me3.rotateZ(.2*(1-2*u))}else if(rl.y>0){me3.position.y+=rl.y;me3.rotateZ(rl.p)}}if(gpos){gh3.visible=true;const gv=gh3.lp?Math.hypot(gpos.x-gh3.lp[0],gpos.y-gh3.lp[1])/dt3:0;gh3.lp=[gpos.x,gpos.y];put(gh3,gpos.x,gpos.y,gpos.h,0,0,Math.min(gv,700),dt3,0);gh3.position.y+=(gpos.air||0)*1.8}else{gh3.visible=false;gh3.lp=null}
  const sp=skG.attributes.position;let n=0;for(let i=0;i<skids.length&&n<900;i++,n++){const q=skids[i];for(let e=0;e<2;e++){const x=q[e*2]*U,z=q[e*2+1]*U;sp.setXYZ(n*2+e,x,hg(x,z)+.13,z)}}skG.setDrawRange(0,n*2);sp.needsUpdate=true;

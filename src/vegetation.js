@@ -74,8 +74,9 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
         if (q2) cols.push({ x, z, r: 0.45 + 0.3 * s, rock: false });
       }
       d.position.set(x, y, z);
-      d.rotation.set(0, rnd() * 6.28, 0);
-      d.scale.set(s * (0.85 + rnd() * 0.3), s * (far ? 1.3 : 1) * (0.9 + rnd() * 0.5), s * (0.85 + rnd() * 0.3));
+      const lean = far ? 0.04 : 0.1;
+      d.rotation.set((rnd() - 0.5) * lean, rnd() * 6.28, (rnd() - 0.5) * lean);
+      d.scale.set(s * (0.78 + rnd() * 0.44), s * (far ? 1.25 : 1) * (0.82 + rnd() * 0.7), s * (0.78 + rnd() * 0.44));
       d.updateMatrix();
       m.setMatrixAt(n, d.matrix);
       const q = VT.hsl;
