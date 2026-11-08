@@ -153,16 +153,22 @@ function drawWear(g, W, H, R, gravel) {
 }
 function drawShoulder(g, S, R) {
   const k = S / 256, m = Math.max(1, k);
-  g.fillStyle = "#766f60";
+  g.fillStyle = "#6f6858";
   g.fillRect(0, 0, S, S);
-  blotches(g, S, R, 26, 20 * k, 70 * k, "190,176,146", "52,46,36", 0.06, 0.16);
-  blotches(g, S, R, 8, 16 * k, 44 * k, "74,86,50", "74,86,50", 0.06, 0.14);
-  speckle(g, S, R, Math.round(9000 * k * k), m, 30, 100, 0.34);
-  speckle(g, S, R, Math.round(9000 * k * k), m, 150, 235, 0.28);
-  pebbles(g, S, R, Math.round(420 * k * k), 1 * m, 2.6 * m, (r) => {
-    const l = 100 + (r() * 100 | 0);
-    return `rgba(${l},${l - 5},${l - 14},.7)`;
-  }, 0.3);
+  blotches(g, S, R, 34, 18 * k, 78 * k, "176,164,136", "58,52,42", 0.07, 0.18);
+  blotches(g, S, R, 14, 12 * k, 46 * k, "132,122,100", "40,38,32", 0.05, 0.14);
+  blotches(g, S, R, 6, 14 * k, 40 * k, "82,94,56", "82,94,56", 0.04, 0.1);
+  speckle(g, S, R, Math.round(11000 * k * k), m, 25, 95, 0.36);
+  speckle(g, S, R, Math.round(8000 * k * k), m, 145, 225, 0.24);
+  pebbles(g, S, R, Math.round(520 * k * k), 0.8 * m, 2.8 * m, (r) => {
+    const l = 88 + (r() * 105 | 0);
+    return `rgba(${l},${l - 6},${l - 15},${0.55 + r() * 0.25})`;
+  }, 0.28);
+  for (let i = 0; i < Math.round(18 * k); i++) {
+    const y = R() * S, h = (2 + R() * 5) * k;
+    g.fillStyle = `rgba(0,0,0,${0.04 + R() * 0.08})`;
+    g.fillRect(0, y, S, h);
+  }
 }
 function drawTerrainDetail(g, S, R) {
   const k = S / 256;
@@ -206,8 +212,8 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
   const gravel = surface === "gravel";
   const S = preset.lambert ? 256 : 512;
   const asphaltTex = cachedTex((gravel ? "g" : "a") + S, () => tex(S, S, (g) => (gravel ? drawGravel : drawAsphalt)(g, S, rng32(gravel ? 7311 : 4177)), null, 8));
-  const wearTex = cachedTex((gravel ? "wg" : "wa") + S, () => tex(256, S, (g, w, h) => drawWear(g, w, h, rng32(gravel ? 91 : 53), gravel), null, 8));
-  const shoulderTex = cachedTex("s" + S, () => tex(S / 2, S / 2, (g) => drawShoulder(g, S / 2, rng32(2207)), null, 4));
+  const wearTex = cachedTex((gravel ? "wg2" : "wa2") + S, () => tex(256, S, (g, w, h) => drawWear(g, w, h, rng32(gravel ? 91 : 53), gravel), null, 8));
+  const shoulderTex = cachedTex("s2" + S, () => tex(S / 2, S / 2, (g) => drawShoulder(g, S / 2, rng32(2207)), null, 4));
   const detail = cachedTex("d" + S, () => tex(S / 2, S / 2, (g) => drawTerrainDetail(g, S / 2, rng32(1301)), null, 8));
   const macroTex = cachedTex("m", () => tex(128, 128, (g, w) => {
     g.fillStyle = "#808080";

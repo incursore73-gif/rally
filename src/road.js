@@ -265,10 +265,12 @@ export function buildRoadMeshes(R, M) {
   add(strip(R, -hw, hw, 0.014, 8), M.wear).renderOrder = 1;
   add(strip(R, hw, hw + sh, -0.03, sh), M.shoulder);
   add(strip(R, -hw - sh, -hw, -0.03, sh), M.shoulder);
+  add(strip(R, hw + sh, hw + sh + 1.8, -0.065, 1.8), M.shoulder);
+  add(strip(R, -hw - sh - 1.8, -hw - sh, -0.065, 1.8), M.shoulder);
   if (R.surface !== "gravel") {
-    add(strip(R, hw - 0.38, hw - 0.24, 0.02, 6), M.line, false);
-    add(strip(R, -hw + 0.24, -hw + 0.38, 0.02, 6), M.line, false);
-    add(strip(R, -0.07, 0.07, 0.02, 6, (i) => Math.floor(R.S[i] / 5) % 2 === 0), M.line, false);
+    add(strip(R, hw - 0.42, hw - 0.22, 0.02, 6), M.line, false);
+    add(strip(R, -hw + 0.22, -hw + 0.42, 0.02, 6), M.line, false);
+    add(strip(R, -0.08, 0.08, 0.02, 6, (i) => Math.floor(R.S[i] / 5) % 2 === 0), M.line, false);
   }
   return g;
 }

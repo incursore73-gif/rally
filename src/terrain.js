@@ -46,6 +46,18 @@ export function createTerrain(cfg, natural, road, preset) {
       if (d < -1.5) out.lerp(P.dk, 0.7);
       else if (d < 2.5) out.lerp(P.sand, ss(2.5, -0.5, d) * 0.9);
     }
+    if (!far) {
+      const q = road.nearest(x, z, road.hw + road.shoulder + 7);
+      if (q) {
+        const edge = road.hw + road.shoulder, d = q.d - edge;
+        if (d < 5.5) {
+          const t = 1 - ss(-0.4, 5.5, d), rv = 0.92 + (nz.fbm(x * 0.14, z * 0.14, 2) - 0.5) * 0.12;
+          tmp.setRGB(0.42 * rv, 0.38 * rv, 0.31 * rv);
+          out.lerp(tmp, t * (0.55 + 0.25 * (1 - ny)));
+          if (d < 1.2) out.multiplyScalar(0.9 + 0.1 * ss(-0.4, 1.2, d));
+        }
+      }
+    }
     if (far) out.lerp(P.hz, ss(450, 2600, Math.hypot(x, z + 800)) * 0.78);
   }
   function grid(x0, z0, x1, z1, step, hf, skip, far) {
