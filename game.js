@@ -281,9 +281,11 @@ bgm.addEventListener("error",()=>{bgmBad=true;document.documentElement.classList
 for(const ev of["pause","emptied"])bgm.addEventListener(ev,()=>document.documentElement.classList.remove("mus"));
 bgmBad=!!bgm.error||bgm.networkState===3;
 {const kick=()=>{if(!bgmOK)playBgm()};for(const ev of["pointerup","touchend","click","keydown"])addEventListener(ev,kick,true);setTimeout(()=>{try{playBgm()}catch(e){}},400);
- setInterval(()=>{if(bgm.error||bgm.networkState===3)bgmBad=true;const m=state==="menu"||state==="done";document.documentElement.classList.toggle("inrace",!m);if(m){if(bgmOK&&bgm.paused&&!bgmFd&&!document.hidden)playBgm()}else if(!bgm.paused||bgmFd)bgmStop()},250)}
-$("#snd").onclick=()=>{muted=!muted;bgmMute();$("#snd").textContent=muted?"🔇":"🔊"};
+ setInterval(()=>{if(bgm.error||bgm.networkState===3)bgmBad=true;const m=state==="menu"||state==="done";document.documentElement.classList.toggle("inrace",!m);const qb=$("#qbtn");if(qb)qb.style.display=RP?"none":"";if(m){if(bgmOK&&bgm.paused&&!bgmFd&&!document.hidden)playBgm()}else if(!bgm.paused||bgmFd)bgmStop()},250)}
+const goFS=()=>{const d=document,e=d.documentElement;try{if(!(d.fullscreenElement||d.webkitFullscreenElement)){(e.requestFullscreen||e.webkitRequestFullscreen).call(e);screen.orientation&&screen.orientation.lock("landscape").catch(()=>{})}}catch(x){}};
+$("#snd").onclick=()=>{muted=!muted;bgmMute();$("#snd").textContent=muted?"🔇":"🔊";if(!muted)goFS()};
 $("#fs").onclick=()=>{const d=document,e=d.documentElement;try{if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d)}else{(e.requestFullscreen||e.webkitRequestFullscreen).call(e);screen.orientation&&screen.orientation.lock("landscape").catch(()=>{})}}catch(x){}};
+const qbtn=$("#qbtn");if(qbtn)qbtn.onclick=()=>{if(RP){const rb=$("#rpb");if(rb)rb.click();return}rally=null;state="menu";$("#menu").classList.remove("hide");$("#res").classList.add("hide");$("#msg").className=""};
 document.addEventListener("visibilitychange",()=>{if(AC)document.hidden?AC.suspend():AC.resume()});
 document.addEventListener("visibilitychange",()=>{document.hidden?bgm.pause():(bgmOK&&playBgm())});
 
@@ -367,7 +369,7 @@ function recompute(){
  input.thr=t;input.brk=0;input.hb=h;wheelId=st===null?null:1;wheelVal=st===null?0:st;
  $("#gas").classList.toggle("on",!!t);$("#hb").classList.toggle("on",!!h)}
 function tmapClear(){tmap.clear();recompute()}
-const skipEv=e=>e.target.closest&&e.target.closest(".ov,#snd,#rpb,#cfg,#cfgp,#cam3,#rot");
+const skipEv=e=>e.target.closest&&e.target.closest(".ov,#snd,#qbtn,#rpb,#cfg,#cfgp,#cam3,#rot");
 ["touchstart","touchmove","touchend","touchcancel"].forEach(n=>addEventListener(n,e=>{if(skipEv(e))return;e.preventDefault();tmap.clear();for(const t of e.touches)tmap.set(t.identifier,{x:t.clientX,y:t.clientY});recompute()},{passive:false}));
 addEventListener("mousedown",e=>{if(skipEv(e))return;mouseDown=true;tmap.set("m",{x:e.clientX,y:e.clientY});recompute()});
 addEventListener("mousemove",e=>{if(mouseDown){tmap.set("m",{x:e.clientX,y:e.clientY});recompute()}});
