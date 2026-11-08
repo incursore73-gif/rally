@@ -1,0 +1,19 @@
+{
+  "name": "alpine-drift-3d",
+  "version": "0.2.0",
+  "description": "Rally 3D sui passi alpini: fisica con derapate, fantasma, replay TV, ambiente alpino procedurale (Three.js r160).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node tests/glb.mjs && node tests/verify.mjs && node tests/play.mjs",
+    "test:glb": "node tests/glb.mjs",
+    "test:env": "node tests/verify.mjs",
+    "test:play": "node tests/play.mjs",
+    "serve": "npx http-server -c-1 ."
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "three": "0.160.0"
+  }
+}
