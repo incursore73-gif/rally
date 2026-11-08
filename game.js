@@ -627,17 +627,17 @@ let RAIN=false,rainP=null,copS=null,copI=0,copL=[],noteEl=null;
  const p=document.createElement("div");p.id="cfgp";
  p.innerHTML='<div class="sw"><div class="sh"><span class="stt">Impostazioni</span><label class="fpsl"><span>Mostra FPS</span><input type="checkbox" id="s_fps"></label><button id="s_ok" class="btn go">Chiudi</button></div><div class="sg">'
  +'<section><h3>Audio</h3><label><span>Audio generale</span><input type="checkbox" id="s_snd"></label><label><span>Copilota (voce)</span><input type="checkbox" id="s_voice"></label><label><span>Musica</span><input type="checkbox" id="s_music"></label></section>'
- +'<section><h3>Guida</h3><label><span>Vista</span><select id="s_cam"><option value="0">Inseguimento</option><option value="1">Cofano</option><option value="2">Paraurti</option></select></label><label class="rg"><span>Sensibilità sterzo</span><input type="range" id="s_steer" min="60" max="150" step="5"></label><button id="s_fs" class="btn g">⛶ Schermo intero</button></section>'
+ +'<section><h3>Guida</h3><label><span>Vista</span><select id="s_cam"><option value="0">Inseguimento</option><option value="1">Cofano</option><option value="2">Paraurti</option></select></label><label><span>Cofano visibile</span><select id="s_hood"><option value="0">Bassa</option><option value="1">Media</option><option value="2">Alta</option></select></label><label class="rg"><span>Sensibilità sterzo</span><input type="range" id="s_steer" min="60" max="150" step="5"></label><button id="s_fs" class="btn g">⛶ Schermo intero</button></section>'
  +'<section><h3>Grafica</h3><label><span>Qualità</span><select id="s_q"><option value="high">Alta</option><option value="perf">Prestazioni</option></select></label><label><span>Ombre</span><input type="checkbox" id="s_shadows"></label><label class="rg"><span>Luminosità</span><input type="range" id="s_b" min="0.7" max="2" step="0.05"></label></section>'
  +'<section><h3>Ambiente</h3><label><span>Meteo</span><select id="s_weather"><option value="auto">Automatico</option><option value="clear">Sereno</option><option value="rain">Pioggia</option></select></label><label><span>Ora</span><select id="s_time"><option value="auto">Automatica</option><option value="day">Giorno</option><option value="dusk">Tramonto</option><option value="night">Notte</option></select></label><small>Meteo e ora si applicano alla prossima prova.</small></section>'
  +'</div></div>';
  document.body.appendChild(p);const g=id=>p.querySelector("#"+id);
- const sync=()=>{g("s_snd").checked=!muted;g("s_fps").checked=!!SET.fps;g("s_voice").checked=SET.voice;g("s_music").checked=SET.music;g("s_shadows").checked=SET.shadows;g("s_weather").value=SET.weather;g("s_time").value=SET.time;g("s_steer").value=SET.steer;g("s_q").value=SET.quality;g("s_b").value=SET.bright;g("s_cam").value=String((SET.cam|0)%3)};
+ const sync=()=>{g("s_snd").checked=!muted;g("s_fps").checked=!!SET.fps;g("s_voice").checked=SET.voice;g("s_music").checked=SET.music;g("s_shadows").checked=SET.shadows;g("s_weather").value=SET.weather;g("s_time").value=SET.time;g("s_steer").value=SET.steer;g("s_q").value=SET.quality;g("s_b").value=SET.bright;g("s_cam").value=String((SET.cam|0)%3);g("s_hood").value=String(cl3(SET.hoodVis|0,0,2))};
  b.onclick=()=>{uiSnd("ui");sync();p.style.display="flex"};
  g("s_ok").onclick=()=>{uiSnd("ui");p.style.display="none"};
  g("s_fs").onclick=()=>{uiSnd("ui");$("#fs").click()};
  p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value};
- p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=+g("s_cam").value;cam3m=SET.cam;SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;SET.steer=+g("s_steer").value;SET.quality=g("s_q").value;saveSet();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
+ p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;SET.steer=+g("s_steer").value;SET.quality=g("s_q").value;saveSet();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
 const GR={hair:["tornante",1],vh:["uno",1],c90:["due",2],sweep:["quattro, largo",4],kink:["cinque, leggera",5],chic:["doppia, tre",3]};
 function noteInfo(n){const P=S.P,a=i=>Math.atan2(P[i].ny,P[i].nx),m=Math.min(S.N-1,Math.max(n.i0+1,Math.round((n.i0+n.i1)/2)));let d=a(m)-a(n.i0);d=Math.atan2(Math.sin(d),Math.cos(d));return{right:d>0}}
 function say(t){if(!SET.voice||!window.speechSynthesis||muted)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";u.rate=1.15;u.volume=1;u.pitch=1;speechSynthesis.speak(u)}catch(e){}}
@@ -668,7 +668,6 @@ function music(){if(!AC)return;const on=SET.music&&!muted&&bgmBad&&(state==="rac
   mN+=st;mStep++}}
 /* --- viste, ora del giorno + fari, danni --- */
 let cam3m=(SET.cam|0)%3,TSPOT=0,spots=null,dmg=0,smk=[],smkM=null;
-
 function applyWorld(){const a=S.L.alp,hr=SET.time==="auto"?a.hr:{day:15.5,dusk:19,night:22}[SET.time],rn=SET.weather==="auto"?!!a.rn:SET.weather==="rain";
  rainSet(rn);ENVI.setTimeOfDay(hr);ENVI.setShadows(SET.shadows);
  if(!spots){spots=[];for(const z of[-.6,.6]){const l=new THREE.SpotLight(0xfff2cc,0,80,.5,.6,2),t=new THREE.Object3D();l.position.set(2,.9,z);t.position.set(16,-.3,z*1.4);me3.add(l);me3.add(t);l.target=t;spots.push(l)}}
@@ -680,7 +679,7 @@ function dmgUpd(dt){if(state==="countdown"&&raceT<.05)dmg=0;
  for(let i=smk.length-1;i>=0;i--){const p=smk[i];p.l-=dt*.8;p.y+=p.vy*dt;if(p.l<=0)smk.splice(i,1)}
  for(let i=0;i<60;i++){if(i<smk.length){const p=smk[i];o3.position.set(p.x,p.y,p.z);o3.scale.setScalar(.25+(1-p.l)*.9)}else o3.scale.setScalar(.0001);o3.rotation.set(0,0,0);o3.updateMatrix();smkM.setMatrixAt(i,o3.matrix)}smkM.instanceMatrix.needsUpdate=true;me3.b.rotation.z+=dmg*.02}
 let lt3=performance.now();/* dinamica della camera (solo vista inseguimento): guarda dentro la curva, si inclina leggermente, si sposta in derapata */
-let camLk=0,camRl=0,camOf=0,vigO=-1;const vigEl=document.getElementById("vig");
+let camLk=0,camRl=0,camOf=0,vigO=-1,hdL={p:0,r:0,y:0};const vigEl=document.getElementById("vig");
 function camDyn(dt,fr){
  if(RP||cam3m||!S){camLk*=.9;camRl*=.9;camOf*=.9;return}
  const P=S.P,N=P.length,i=Math.max(0,Math.min(N-1,me.idx|0)),T=P[Math.min(N-1,i+Math.round(8+fr*10))];
@@ -699,7 +698,13 @@ function draw3d(){if(bS!==S)build3();R3.toneMappingExposure=1.3*(SET.bright||1);
  for(let i=0;i<90;i++){if(i<sprk.length){const p=sprk[i],x=p.x*U,z=p.y*U,hh=Math.max(0,p.h0+p.vz*p.age-4.9*p.age*p.age);o3.position.set(x,hg(x,z)+.1+hh,z);o3.scale.setScalar(.05*(p.age<.35?1:(.5-p.age)/.15))}else o3.scale.setScalar(.0001);o3.rotation.set(i,i*2,0);o3.updateMatrix();sparkM.setMatrixAt(i,o3.matrix)}sparkM.instanceMatrix.needsUpdate=true;
  camDyn(dt3,fr);const c=Math.cos(camH),s=Math.sin(camH),d=8.5+2.5*fr,X=me.x*U,Z=me.y*U,tx=X-c*d,tz=Z-s*d,ty=Math.max(hg(X,Z)+3.4+fr*.8,hg(tx,tz)+1.3);
  shk*=Math.exp(-dt3*5);sb.textContent=Math.abs(SLP)<.03?"":(SLP>0?"▲ ":"▼ ")+Math.round(Math.abs(SLP)*100)+"%";const sh=shk+(Math.abs(me.lat)>S.hw?.05*fr:0)+.02*fr*Math.min(1,me.slip*2);cam3.position.set(tx-s*camOf+(Math.random()-.5)*sh,ty+(Math.random()-.5)*sh,tz+c*camOf+(Math.random()-.5)*sh);cam3.lookAt(X+c*7-s*camLk,hg(X,Z)+1.4,Z+s*7+c*camLk);if(!cam3m&&!RP)cam3.rotateZ(-camRl);const f=58+22*fr;if(Math.abs(cam3.fov-f)>.05){cam3.fov+=(f-cam3.fov)*.15;cam3.updateProjectionMatrix()}
- if(cam3m&&!RP){me3.updateMatrixWorld(true);const lp=cam3m===1?[1.05,1.5,0]:[2.2,.6,0];cam3.position.copy(me3.localToWorld(new THREE.Vector3(lp[0],lp[1],lp[2])));cam3.lookAt(me3.localToWorld(new THREE.Vector3(30,lp[1]*.8,0)));cam3.fov=cam3m===1?70:78;cam3.updateProjectionMatrix()}dmgUpd(dt3);if(RP&&state!=="done"){RP=null;if(rpBtn)rpBtn.style.display="none"}if(RP)rpUpd(dt3);FOC.set(me.x*U,hg(me.x*U,me.y*U),me.y*U);if(RP&&RPF)FOC.set(RPF[0],RPF[1],RPF[2]);ENVI.update(cam3,FOC);lines(fr);aux(dt3,fr);vigUpd(fr);adapt(dt3);fpsTick();if(rainP)rainUpd(dt3);cop();music();R3.render(sc3,cam3)}
+ if(cam3m&&!RP){me3.updateMatrixWorld(true);if(cam3m===1){const hv=cl3(SET.hoodVis|0,0,2),t=hv/2,ey=1.14-t*.22,ty=.78-t*.34,ex=1.52;
+  hdL.p+=(cl3((me3.pa||0)*-.00005,-.045,.035)-hdL.p)*Math.min(1,dt3*5);
+  hdL.r+=(cl3((me.st||0)*.045+cl3(me.vl||0,-140,140)*.0003,-.06,.06)-hdL.r)*Math.min(1,dt3*4);
+  hdL.y+=(cl3((me&&me.slip||0)*.02,0,.04)+(S&&me&&Math.abs(me.lat)>S.hw?.015*fr:0)-hdL.y)*Math.min(1,dt3*4);
+  const jx=(Math.random()-.5)*sh*.5,jy=(Math.random()-.5)*sh*.5;cam3.position.copy(me3.localToWorld(new THREE.Vector3(ex+jx*.3,ey+hdL.p*1.5+hdL.y+jy*.3,.0)));
+  cam3.lookAt(me3.localToWorld(new THREE.Vector3(14,ty+hdL.p*2.2,hdL.r*3)));cam3.rotateZ(-hdL.r*1.2+(Math.random()-.5)*sh*.08);cam3.fov=74;if(cam3.near!==.15)cam3.near=.15;cam3.updateProjectionMatrix()}
+  else{const lp=[2.2,.6,0];cam3.position.copy(me3.localToWorld(new THREE.Vector3(lp[0],lp[1],lp[2])));cam3.lookAt(me3.localToWorld(new THREE.Vector3(30,lp[1]*.8,0)));cam3.fov=78;if(cam3.near!==.3)cam3.near=.3;cam3.updateProjectionMatrix()}}dmgUpd(dt3);if(RP&&state!=="done"){RP=null;if(rpBtn)rpBtn.style.display="none"}if(RP)rpUpd(dt3);FOC.set(me.x*U,hg(me.x*U,me.y*U),me.y*U);if(RP&&RPF)FOC.set(RPF[0],RPF[1],RPF[2]);ENVI.update(cam3,FOC);lines(fr);aux(dt3,fr);vigUpd(fr);adapt(dt3);fpsTick();if(rainP)rainUpd(dt3);cop();music();R3.render(sc3,cam3)}
 function draw(){draw3d();
   /* HUD */
  const ta=Math.round(raceT*1000),gt=ghostTAt(me.idx*DS),gdl=gt==null||state==="countdown"?null:ta-gt;
