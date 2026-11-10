@@ -362,5 +362,158 @@ export function buildFurniture(R, heightAt, M, cfg) {
     }
   }
   inst(new THREE.BoxGeometry(1, 0.7, 0.05), M.sign, chevM, true);
-  return { group: g, guardrails: segs, flags: { left: FL[-1], right: FL[1] }, landmarks: R.hairpins.map((h) => ({ type: "hairpin", position: h.position, s: h.s, radius: h.radius })) };
+  /* ---- paesaggio a bordo pista: muri a secco, case, incroci, ponti (estetica + collider statici) ---- */
+  const sideCfg = ({ alpine: { walls: 0.55, houses: 16, bridges: 3, crossings: 4 }, forest: { walls: 0.22, houses: 10, bridges: 2, crossings: 3 }, canyon: { walls: 0.15, houses: 0, bridges: 2, crossings: 3 }, coast: { walls: 0.1, houses: 10, bridges: 2, crossings: 3 } })[cfg.theme] || { walls: 0.4, houses: 12, bridges: 2, crossings: 3 };
+  const rnd2 = mulberry32((cfg.seed | 0) * 2654435 + 97), wcol = new THREE.Color(), colsF = [];
+  // muretti a secco in pietra
+  const drystone = [];
+  if (sideCfg.walls > 0) {
+    const stepI = Math.max(1, Math.round(2.2 / ds));
+    let budget = 950;
+    for (const side of [-1, 1]) {
+      const flg = FL[side];
+      let i = 20 + Math.floor(rnd2() * 60), run = 0, cool = 30 + Math.floor(rnd2() * 120);
+      while (i < N - 12 && budget > 0) {
+        if (flg[i]) { run = 0; cool = 40 + Math.floor(rnd2() * 90); i += 3; continue; }
+        if (cool > 0) { cool -= stepI; i += stepI; continue; }
+        if (run <= 0) {
+          if (rnd2() < sideCfg.walls) run = 10 + Math.floor(rnd2() * 24);
+          else { cool = 120 + Math.floor(rnd2() * 420); i += stepI; continue; }
+        }
+        const o = hw + sh + 0.95 + rnd2() * 0.15;
+        const x = R.X[i] + R.NX[i] * side * o, z = R.Z[i] + R.NZ[i] * side * o;
+        const gy = heightAt(x, z), dy = gy - R.Y[i];
+        const q2 = R.nearest(x, z, 46);
+        const onOther = q2 && q2.d < hw + sh + 0.7 && Math.abs(R.S[q2.i] - R.S[i]) > 60;
+        if (!onOther && dy > -1.6 && dy < 1.1) {
+          const sy = 0.78 + rnd2() * 0.34;
+          drystone.push([x, gy, z, Math.atan2(-R.TZ[i], R.TX[i]) + (rnd2() - 0.5) * 0.06, sy]);
+          colsF.push({ x, z, r: 1, rock: true });
+          budget--;
+        }
+        run -= stepI;
+        i += stepI;
+      }
+    }
+  }
+  if (drystone.length) {
+    const wIM = new THREE.InstancedMesh(new THREE.BoxGeometry(2.15, 1, 0.42), M.stone, drystone.length);
+    drystone.forEach((p, k) => {
+      dummy.position.set(p[0], p[1] + p[4] * 0.5 - 0.06, p[2]);
+      dummy.rotation.set((rnd2() - 0.5) * 0.02, p[3], (rnd2() - 0.5) * 0.02);
+      dummy.scale.set(1 + (rnd2() - 0.5) * 0.08, p[4], 1);
+      dummy.updateMatrix();
+      wIM.setMatrixAt(k, dummy.matrix);
+      wIM.setColorAt(k, wcol.setHSL(0.07 + rnd2() * 0.04, 0.04 + rnd2() * 0.05, 0.42 + rnd2() * 0.2));
+    });
+    wIM.instanceColor.needsUpdate = true;
+    wIM.castShadow = true;
+    g.add(wIM);
+  }
+  // case / borgo a bordo strada
+  const housB = [], housR = [];
+  if (sideCfg.houses > 0) {
+    const anchors = [Math.max(5, Math.round(N * 0.03)), Math.round(N * 0.35), Math.round(N * 0.62), Math.round(N * 0.85)];
+    for (const h of R.hairpins) anchors.push(Math.min(N - 6, Math.max(6, h.index + (rnd2() < 0.5 ? 14 : -14))));
+    let placed = 0;
+    for (const ai of anchors) {
+      if (placed >= sideCfg.houses) break;
+      const n = 2 + Math.floor(rnd2() * 3);
+      for (let k = 0; k < n && placed < sideCfg.houses; k++) {
+        const i2 = Math.min(N - 6, Math.max(5, ai + Math.floor((rnd2() - 0.5) * 22)));
+        const side = rnd2() < 0.5 ? -1 : 1;
+        const o = hw + sh + 7 + rnd2() * 9;
+        const x = R.X[i2] + R.NX[i2] * side * o, z = R.Z[i2] + R.NZ[i2] * side * o;
+        const q2 = R.nearest(x, z, 70);
+        if (q2 && q2.d < hw + sh + 4.5) continue;
+        const y = heightAt(x, z);
+        if (Math.max(Math.abs(heightAt(x + 3, z) - y), Math.abs(heightAt(x, z + 3) - y)) > 1.6) continue;
+        const w = 4.2 + rnd2() * 2.2, d = 3.8 + rnd2() * 1.6, hh = 2.8 + rnd2() * 1.4;
+        const yaw = Math.atan2(-R.TZ[i2], R.TX[i2]) + (rnd2() - 0.5) * 0.35;
+        housB.push([x, y, z, yaw, w, hh, d]);
+        housR.push([x, y, z, yaw, w, hh, d, 1.4 + rnd2() * 1]);
+        colsF.push({ x, z, r: Math.max(w, d) * 0.5, rock: true });
+        placed++;
+      }
+    }
+  }
+  if (housB.length) {
+    const bIM = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), M.plaster, housB.length);
+    const rIM = new THREE.InstancedMesh(new THREE.ConeGeometry(0.707, 1, 4).rotateY(Math.PI / 4), M.roof, housR.length);
+    housB.forEach((p, k) => {
+      dummy.position.set(p[0], p[1] + p[5] / 2, p[2]);
+      dummy.rotation.set(0, p[3], 0);
+      dummy.scale.set(p[4], p[5], p[6]);
+      dummy.updateMatrix();
+      bIM.setMatrixAt(k, dummy.matrix);
+      bIM.setColorAt(k, wcol.setHSL(0.09 + rnd2() * 0.05, 0.18 + rnd2() * 0.2, 0.66 + rnd2() * 0.18));
+      const q = housR[k], rh = q[7];
+      dummy.position.set(q[0], q[1] + q[5] + rh / 2 - 0.1, q[2]);
+      dummy.scale.set(q[4] * 1.04, rh, q[6] * 1.04);
+      dummy.updateMatrix();
+      rIM.setMatrixAt(k, dummy.matrix);
+      rIM.setColorAt(k, wcol.setHSL(0.02 + rnd2() * 0.05, 0.3 + rnd2() * 0.2, 0.24 + rnd2() * 0.12));
+    });
+    bIM.instanceColor.needsUpdate = true;
+    rIM.instanceColor.needsUpdate = true;
+    bIM.castShadow = rIM.castShadow = true;
+    g.add(bIM, rIM);
+  }
+  // incroci (strade bianche/farm road che attraversano l'asfalto, solo decal)
+  if (sideCfg.crossings > 0 && M.cross) {
+    const crossIdx = [];
+    for (let i = 30, last = -1e9; i < N - 30; i++) if (Math.abs(R.K[i]) < 0.004 && R.S[i] - last > 320 && rnd2() < 0.03) { crossIdx.push(i); last = R.S[i]; if (crossIdx.length >= sideCfg.crossings) break; }
+    if (crossIdx.length) {
+      const cIM = new THREE.InstancedMesh(new THREE.PlaneGeometry(2 * (hw + sh + 2.6), 6.2).rotateX(-Math.PI / 2), M.cross, crossIdx.length);
+      crossIdx.forEach((i, k) => {
+        dummy.position.set(R.X[i], R.Y[i] + 0.017, R.Z[i]);
+        dummy.rotation.set(0, Math.atan2(-R.NZ[i], R.NX[i]), 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        cIM.setMatrixAt(k, dummy.matrix);
+      });
+      cIM.receiveShadow = true;
+      g.add(cIM);
+    }
+  }
+  // ponti che scavalcano la pista
+  const bridgeIdx = [];
+  for (const f of [0.3, 0.6, 0.85]) {
+    const i = Math.round(N * f);
+    if (bridgeIdx.length < sideCfg.bridges && i > 60 && i < N - 60 && (bridgeIdx.length === 0 || R.S[i] - R.S[bridgeIdx[bridgeIdx.length - 1]] > 380)) bridgeIdx.push(i);
+  }
+  for (const h of R.hairpins) if (bridgeIdx.length < sideCfg.bridges && h.index > 40 && h.index < N - 40 && (!bridgeIdx.length || Math.abs(h.index - bridgeIdx[bridgeIdx.length - 1]) > 190)) bridgeIdx.push(h.index);
+  for (const bi of bridgeIdx) {
+    const dirX = R.NX[bi], dirZ = R.NZ[bi], span = 2 * (hw + sh + 5.5);
+    let yMax = -1e9;
+    for (let k = Math.max(0, bi - 18); k <= Math.min(N - 1, bi + 18); k++) yMax = Math.max(yMax, R.Y[k]);
+    const deckY = yMax + 4.8, yawD = Math.atan2(-dirZ, dirX);
+    const bg = new THREE.Group();
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(span, 0.8, 4.6), M.deck);
+    deck.position.set(R.X[bi], deckY, R.Z[bi]);
+    deck.rotation.y = yawD;
+    deck.castShadow = true;
+    bg.add(deck);
+    for (const s of [-1, 1]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(span, 0.55, 0.22), M.rail);
+      rail.position.set(R.X[bi] + R.TX[bi] * s * 2.2, deckY + 0.55, R.Z[bi] + R.TZ[bi] * s * 2.2);
+      rail.rotation.y = yawD;
+      bg.add(rail);
+      const po = span / 2 - 2.2, px = R.X[bi] + dirX * s * po, pz = R.Z[bi] + dirZ * s * po;
+      const gy = heightAt(px, pz), h = deckY - 0.4 - gy;
+      if (h > 0.4) {
+        const pier = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1, 1.3), M.pier);
+        pier.position.set(px, gy + h / 2, pz);
+        pier.scale.y = h;
+        pier.castShadow = true;
+        bg.add(pier);
+        colsF.push({ x: px, z: pz, r: 1.1, rock: true });
+      }
+    }
+    g.add(bg);
+  }
+  return { group: g, guardrails: segs, flags: { left: FL[-1], right: FL[1] }, landmarks: R.hairpins.map((h) => ({ type: "hairpin", position: h.position, s: h.s, radius: h.radius })), colliders: colsF.filter((c) => {
+    const q = R.nearest(c.x, c.z, 30);
+    return q && q.d < 30;
+  }) };
 }

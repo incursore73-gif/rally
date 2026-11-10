@@ -220,6 +220,7 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
     g.fillRect(0, 0, w, w);
     blotches(g, w, rng32(555), 46, 12, 56, "255,255,255", "0,0,0", 0.14, 0.34);
   }, null, 2));
+  const crossTex = cachedTex("x" + S, () => tex(S / 2, S / 2, (g) => drawShoulder(g, S / 2, rng32(3307)), [6, 1], 4));
   const rockTex = cachedTex("r" + S, () => tex(128, 128, (g) => drawRock(g, 128, rng32(77)), null, 4));
   const M = {
     asphalt: mk({ color: asphaltTex ? 16053492 : gravel ? 8618883 : 3487029, map: asphaltTex, ...preset.lambert || !asphaltTex ? {} : { bumpMap: asphaltTex, bumpScale: 0.6 }, side: THREE.DoubleSide }, 0.86),
@@ -234,7 +235,13 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
     wall: mk({ color: 9737364, flatShading: true }, 1),
     sign: mk({ color: 16737792, emissive: 0x331100 }, 0.55),
     delin: mk({ color: 15132390 }, 0.6),
-    reflect: mk({ color: 16724530, emissive: 0x551111 }, 0.35, 0.15)
+    reflect: mk({ color: 16724530, emissive: 0x551111 }, 0.35, 0.15),
+    stone: mk({ color: 16777215 }, 0.95),
+    plaster: mk({ color: 16777215 }, 0.9),
+    roof: mk({ color: 16777215 }, 0.85),
+    deck: mk({ color: 0x5d5a55 }, 0.94),
+    pier: mk({ color: 13817210 }, 0.95),
+    cross: mk({ color: 16777215, map: crossTex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }, 0.98)
   };
   if (macroTex) {
     const macro = (mat) => {

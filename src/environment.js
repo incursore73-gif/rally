@@ -212,7 +212,7 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
       return state.terrain.heightAt(x, z);
     },
     get colliders() {
-      return state.veg.colliders;
+      return state.furn && state.furn.colliders && state.furn.colliders.length ? state.furn.colliders.concat(state.veg.colliders) : state.veg.colliders;
     },
     get guardFlags() {
       return state.furn.flags;
