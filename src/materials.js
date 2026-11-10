@@ -109,6 +109,81 @@ function drawAsphalt(g, S, R) {
   const nc = 2 + (R() * 2 | 0);
   for (let i = 0; i < nc; i++) crack(g, S, R, 30 + R() * (S - 60), 30 + R() * (S - 60), R() * 6.28, (110 + R() * 150) * k, (0.8 + R() * 0.8) * m, 0);
 }
+function drawMasonry(g, S, R, bump) {
+  const rows = 6, rowH = S / rows;
+  g.fillStyle = bump ? "rgb(38,38,40)" : "#4d463c";
+  g.fillRect(0, 0, S, S);
+  g.fillStyle = bump ? "rgb(30,30,32)" : "rgba(0,0,0,.18)";
+  for (let r2 = 0; r2 < rows; r2++) g.fillRect(0, r2 * rowH, S, 2.5);
+  for (let r2 = 0; r2 < rows; r2++) {
+    const y = r2 * rowH + 2.5, h = rowH - 3.5, off = (r2 % 2) * rowH * 0.55;
+    let x = off - rowH * (0.4 + R() * 0.5);
+    while (x < S) {
+      const w = h * (0.72 + R() * 1.1), bx = x;
+      x += w + 3.5;
+      if (bx + w < 0) continue;
+      const l0 = bump ? 200 + R() * 45 : 96 + R() * 66;
+      if (bump) g.fillStyle = `rgba(${l0},${l0},${l0},1)`;
+      else {
+        const warm = R() < 0.2;
+        g.fillStyle = warm ? `rgb(${l0 + 44},${l0 + 20},${l0 - 24})` : `rgb(${l0 + 12},${l0 + 7},${l0 + 2})`;
+      }
+      g.fillRect(bx, y, w, h);
+      if (!bump) {
+        g.fillStyle = "rgba(255,255,255,.15)";
+        g.fillRect(bx, y, w, Math.max(1, h * 0.12));
+        g.fillStyle = "rgba(0,0,0,.2)";
+        g.fillRect(bx, y + h * 0.86, w, Math.max(1, h * 0.12));
+        if (R() < 0.16) { g.fillStyle = "rgba(84,102,52,.22)"; g.fillRect(bx + R() * w * 0.66, y + h * 0.68, w * 0.3, h * 0.26); }
+        if (R() < 0.1) { g.fillStyle = "rgba(30,26,22,.25)"; g.fillRect(bx + w * 0.2, y + h * 0.3, w * 0.5, h * 0.2); }
+      } else {
+        g.fillStyle = "rgba(0,0,0,.28)";
+        g.fillRect(bx + w - 2, y, 2, h);
+        g.fillRect(bx, y + h - 2, w, 2);
+      }
+    }
+  }
+  grain(g, S, S, 1400, bump ? 0.12 : 0.05);
+}
+function drawWBeam(g, W, H, R, bump) {
+  const band = (y, h, c) => { g.fillStyle = c; g.fillRect(0, y * H, W, h * H); };
+  if (bump) {
+    band(0, 1, "rgb(120,120,120)");
+    band(0.14, 0.14, "rgb(210,210,210)");
+    band(0.3, 0.16, "rgb(62,62,62)");
+    band(0.48, 0.14, "rgb(215,215,215)");
+    band(0.64, 0.16, "rgb(56,56,56)");
+    band(0.82, 0.18, "rgb(150,150,150)");
+    grain(g, W, H, 700, 0.08);
+  } else {
+    band(0, 1, "#8b9296");
+    band(0, 0.1, "#74797d");
+    band(0.14, 0.14, "#c3c9cd");
+    band(0.3, 0.16, "#5f676c");
+    band(0.48, 0.14, "#cacfd2");
+    band(0.64, 0.16, "#596066");
+    band(0.82, 0.18, "#7e858b");
+    for (let i = 0; i < 26; i++) {
+      const x = R() * W, y = R() * H * 0.5, l = H * (0.2 + R() * 0.5);
+      g.fillStyle = `rgba(126,76,42,${0.08 + R() * 0.15})`;
+      g.fillRect(x, y, 1 + R() * 2, l);
+    }
+    g.fillStyle = "rgba(30,26,22,.13)";
+    g.fillRect(0, H * 0.86, W, H * 0.14);
+    grain(g, W, H, 500, 0.05);
+  }
+}
+function drawAsphaltRough(g, S, R) {
+  const k = S / 512;
+  g.fillStyle = "#c9c9c9";
+  g.fillRect(0, 0, S, S);
+  blotches(g, S, R, 30, 18 * k, 90 * k, "245,245,245", "140,140,140", 0.08, 0.18);
+  for (const ux of [0.24, 0.74]) {
+    g.fillStyle = "rgba(105,105,105,.22)";
+    g.fillRect((ux - 0.05) * S, 0, 0.1 * S, S);
+  }
+  grain(g, S, S, 2600, 0.1);
+}
 function drawGravel(g, S, R) {
   const k = S / 512, m = Math.max(1, k);
   g.fillStyle = "#8b7b63";
@@ -221,22 +296,27 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
     blotches(g, w, rng32(555), 46, 12, 56, "255,255,255", "0,0,0", 0.14, 0.34);
   }, null, 2));
   const crossTex = cachedTex("x" + S, () => tex(S / 2, S / 2, (g) => drawShoulder(g, S / 2, rng32(3307)), [6, 1], 4));
+  const masonryTex = cachedTex("ms" + S, () => tex(256, 256, (g) => drawMasonry(g, 256, rng32(4242), false), null, 8));
+  const masonryBumpTex = cachedTex("msb" + S, () => tex(256, 256, (g) => drawMasonry(g, 256, rng32(4242), true), null, 8));
+  const railTex = cachedTex("wb" + S, () => tex(256, 64, (g) => drawWBeam(g, 256, 64, rng32(777), false), null, 8));
+  const railBumpTex = cachedTex("wbb" + S, () => tex(256, 64, (g) => drawWBeam(g, 256, 64, rng32(777), true), null, 8));
+  const roughTex = cachedTex("ar" + S, () => tex(256, 256, (g) => drawAsphaltRough(g, 256, rng32(991)), null, 4));
   const rockTex = cachedTex("r" + S, () => tex(128, 128, (g) => drawRock(g, 128, rng32(77)), null, 4));
   const M = {
-    asphalt: mk({ color: asphaltTex ? 16053492 : gravel ? 8618883 : 3487029, map: asphaltTex, ...preset.lambert || !asphaltTex ? {} : { bumpMap: asphaltTex, bumpScale: 0.6 }, side: THREE.DoubleSide }, 0.86),
+    asphalt: mk({ color: asphaltTex ? 16053492 : gravel ? 8618883 : 3487029, map: asphaltTex, ...preset.lambert || !asphaltTex ? {} : { bumpMap: asphaltTex, bumpScale: 0.35, roughnessMap: roughTex }, side: THREE.DoubleSide }, 0.86),
     wear: mk({ color: 0, map: wearTex, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }, 0.92),
     shoulder: mk({ color: shoulderTex ? 15000804 : 7039851, map: shoulderTex, side: THREE.DoubleSide }, 0.98),
     line: mk({ color: 15790320, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }, 0.62),
     terrain: mk({ vertexColors: true, map: detail, ...preset.lambert || !detail ? {} : { bumpMap: detail, bumpScale: 0.22 }, side: THREE.DoubleSide }, 0.98),
     rock: mk({ color: 9144192, map: rockTex, vertexColors: true, flatShading: true }, 0.96),
     tree: mk({ vertexColors: true }, 1),
-    rail: mk({ color: 13816530, side: THREE.DoubleSide }, 0.28, 0.78),
+    rail: mk({ color: 16777215, map: railTex, ...preset.lambert || !railTex ? {} : { bumpMap: railBumpTex, bumpScale: 0.09 }, side: THREE.DoubleSide }, 0.42, 0.78),
     post: mk({ color: 7763574 }, 0.48, 0.55),
     wall: mk({ color: 9737364, flatShading: true }, 1),
     sign: mk({ color: 16737792, emissive: 0x331100 }, 0.55),
     delin: mk({ color: 15132390 }, 0.6),
     reflect: mk({ color: 16724530, emissive: 0x551111 }, 0.35, 0.15),
-    stone: mk({ color: 16777215 }, 0.95),
+    stone: mk({ color: 16777215, map: masonryTex, ...preset.lambert || !masonryTex ? {} : { bumpMap: masonryBumpTex, bumpScale: 0.06 }, side: THREE.DoubleSide }, 1),
     plaster: mk({ color: 16777215 }, 0.9),
     roof: mk({ color: 16777215 }, 0.85),
     deck: mk({ color: 0x5d5a55 }, 0.94),
