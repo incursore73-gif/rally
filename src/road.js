@@ -321,17 +321,20 @@ export function buildFurniture(R, heightAt, M, cfg) {
   }
   const rg = new THREE.BufferGeometry();
   {
-    const P = [], I = [];
-    let b = 0;
+    const P = [], I = [], UV = [];
+    let b = 0, uAcc = 0;
     for (const s of segs) {
       for (let k = 0; k < s.points.length; k++) {
         const p = s.points[k];
+        if (k > 0) uAcc += Math.hypot(p.x - s.points[k - 1].x, p.z - s.points[k - 1].z) / 6;
         P.push(p.x, p.y, p.z, p.x, p.y + 0.32, p.z);
+        UV.push(uAcc, 0, uAcc, 1);
         if (k < s.points.length - 1) I.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
         b += 2;
       }
     }
     rg.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
+    rg.setAttribute("uv", new THREE.Float32BufferAttribute(UV, 2));
     rg.setIndex(I);
     rg.computeVertexNormals();
   }
@@ -404,11 +407,23 @@ export function buildFurniture(R, heightAt, M, cfg) {
       dummy.scale.set(1 + (rnd2() - 0.5) * 0.08, p[4], 1);
       dummy.updateMatrix();
       wIM.setMatrixAt(k, dummy.matrix);
-      wIM.setColorAt(k, wcol.setHSL(0.07 + rnd2() * 0.04, 0.04 + rnd2() * 0.05, 0.42 + rnd2() * 0.2));
+      wIM.setColorAt(k, wcol.setHSL(0.07 + rnd2() * 0.03, 0.03 + rnd2() * 0.04, 0.72 + rnd2() * 0.2));
     });
     wIM.instanceColor.needsUpdate = true;
     wIM.castShadow = true;
     g.add(wIM);
+    const cIM = new THREE.InstancedMesh(new THREE.BoxGeometry(2.24, 0.16, 0.52), M.stone, drystone.length);
+    drystone.forEach((p, k) => {
+      dummy.position.set(p[0], p[1] + p[4] + 0.03, p[2]);
+      dummy.rotation.set((rnd2() - 0.5) * 0.02, p[3] + (rnd2() - 0.5) * 0.03, (rnd2() - 0.5) * 0.02);
+      dummy.scale.set(1 + (rnd2() - 0.5) * 0.06, 1, 1);
+      dummy.updateMatrix();
+      cIM.setMatrixAt(k, dummy.matrix);
+      cIM.setColorAt(k, wcol.setHSL(0.08 + rnd2() * 0.03, 0.03 + rnd2() * 0.04, 0.82 + rnd2() * 0.14));
+    });
+    cIM.instanceColor.needsUpdate = true;
+    cIM.castShadow = true;
+    g.add(cIM);
   }
   // case / borgo a bordo strada
   const housB = [], housR = [];
@@ -488,6 +503,7 @@ export function buildFurniture(R, heightAt, M, cfg) {
     let yMax = -1e9;
     for (let k = Math.max(0, bi - 18); k <= Math.min(N - 1, bi + 18); k++) yMax = Math.max(yMax, R.Y[k]);
     const deckY = yMax + 4.8, yawD = Math.atan2(-dirZ, dirX);
+    const arch = rnd2() < 0.45, rise = Math.min(9, span * 0.22);
     const bg = new THREE.Group();
     const deck = new THREE.Mesh(new THREE.BoxGeometry(span, 0.8, 4.6), M.deck);
     deck.position.set(R.X[bi], deckY, R.Z[bi]);
@@ -509,6 +525,36 @@ export function buildFurniture(R, heightAt, M, cfg) {
         bg.add(pier);
         colsF.push({ x: px, z: pz, r: 1.1, rock: true });
       }
+    }
+    if (arch) {
+      // variante ponte ad arco in acciaio: due archi (tube) + pendini verticali
+      const pts = [];
+      for (let t = 0; t <= 1.001; t += 0.083) {
+        const a = (t - 0.5) * span;
+        pts.push(new THREE.Vector3(R.X[bi] + dirX * a, deckY + 0.55 + Math.sin(Math.PI * t) * rise, R.Z[bi] + dirZ * a));
+      }
+      const tubeG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.26, 6);
+      for (const s of [-1, 1]) {
+        const tube = new THREE.Mesh(tubeG, M.steel);
+        tube.position.set(R.TX[bi] * s * 2.35, 0, R.TZ[bi] * s * 2.35);
+        tube.castShadow = true;
+        bg.add(tube);
+      }
+      const hIM = new THREE.InstancedMesh(new THREE.BoxGeometry(0.09, 1, 0.09), M.steel, 18);
+      let hn = 0;
+      for (let t = 0.12; t <= 0.881; t += 0.095) {
+        const a = (t - 0.5) * span, top = 0.15 + Math.sin(Math.PI * t) * rise;
+        for (const s of [-1, 1]) {
+          dummy.position.set(R.X[bi] + dirX * a + R.TX[bi] * s * 2.35, deckY + 0.4 + top / 2, R.Z[bi] + dirZ * a + R.TZ[bi] * s * 2.35);
+          dummy.rotation.set(0, 0, 0);
+          dummy.scale.set(1, top, 1);
+          dummy.updateMatrix();
+          hIM.setMatrixAt(hn++, dummy.matrix);
+        }
+      }
+      hIM.instanceMatrix.needsUpdate = true;
+      hIM.castShadow = true;
+      bg.add(hIM);
     }
     g.add(bg);
   }

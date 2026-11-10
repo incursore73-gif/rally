@@ -87,7 +87,8 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
       d.updateMatrix();
       m.setMatrixAt(n, d.matrix);
       const q = opt.hsl || VT.hsl, vj = nz2.fbm(x * 0.018 + 3, z * 0.018, 2);
-      m.setColorAt(n, col.setHSL(q[0] + rnd() * (q[1] - q[0]) + vj * 0.015, Math.min(1, q[2] + rnd() * (q[3] - q[2]) + vj * 0.04), q[4] + rnd() * (q[5] - q[4]) + (rnd() - 0.5) * 0.04));
+      if (opt.dead && rnd() < 0.055) m.setColorAt(n, col.setHSL(0.09, 0.2 + rnd() * 0.1, 0.3 + rnd() * 0.1));
+      else m.setColorAt(n, col.setHSL(q[0] + rnd() * (q[1] - q[0]) + vj * 0.015, Math.min(1, q[2] + rnd() * (q[3] - q[2]) + vj * 0.04), q[4] + rnd() * (q[5] - q[4]) + (rnd() - 0.5) * 0.04));
       n++;
     }
     m.count = n;
@@ -101,8 +102,8 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
 
   const nearBudget = Math.round(preset.trees.near * VT.density);
   const altN = mix.alt ? Math.round(nearBudget * mix.p) : 0;
-  const nNearA = place(Math.max(0, nearBudget - altN), F, treeGeo(VT.type), false, { shadow: true, collide: true });
-  const nNearB = altN ? place(altN, F, treeGeo(mix.alt), false, { shadow: true, collide: true, density: VT.density * 0.95 }) : 0;
+  const nNearA = place(Math.max(0, nearBudget - altN), F, treeGeo(VT.type), false, { shadow: true, collide: true, dead: VT.type === "conifer" || VT.type === "pine" });
+  const nNearB = altN ? place(altN, F, treeGeo(mix.alt), false, { shadow: true, collide: true, density: VT.density * 0.95, dead: mix.alt === "conifer" || mix.alt === "pine" }) : 0;
   const shrubN = Math.round(nearBudget * (mix.shrub || 0));
   const shrubHsl = [Math.max(0, VT.hsl[0] - 0.02), Math.min(1, VT.hsl[1] + 0.02), Math.min(1, VT.hsl[2] + 0.06), Math.min(1, VT.hsl[3] + 0.08), Math.max(0, VT.hsl[4] - 0.04), Math.min(1, VT.hsl[5] + 0.02)];
   const nShrub = shrubN ? place(shrubN, F, treeGeo("shrub"), false, { shrub: true, shadow: false, collide: false, density: VT.density * 1.1, minK: 0.75, slopeMax: 0.82, tries: 12, hsl: shrubHsl }) : 0;
@@ -145,6 +146,30 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
   const nrMain = placeRocks(rockGeo(rnd), rMain, false);
   const nrSmall = placeRocks(rockGeo(rnd), rSmall, true);
   const nNear = nNearA + nNearB;
+
+  // ghiaia/ciottoli sul ciglio (solo estetica, nessun collider: non tocca la fisica)
+  const cobN = Math.round(rMain * 0.55 + 260), cobIM = new THREE.InstancedMesh(rockGeo(rnd), M.rock, cobN);
+  let ncob = 0, ctries = 0;
+  while (ctries++ < cobN * 8 && ncob < cobN) {
+    const i = Math.floor(rnd() * road.N), side = rnd() < 0.5 ? -1 : 1;
+    const o = road.hw + road.shoulder + 0.55 + rnd() * 2;
+    const x = road.X[i] + road.NX[i] * side * o, z = road.Z[i] + road.NZ[i] * side * o;
+    const q = road.nearest(x, z, 26);
+    if (!q || q.d < road.hw + road.shoulder + 0.35) continue;
+    const y = hAt(x, z), s = 0.09 + rnd() * 0.26;
+    d.position.set(x, y + s * 0.05, z);
+    d.rotation.set(rnd() * 0.5, rnd() * 6.283, rnd() * 0.5);
+    d.scale.set(s * (1 + rnd() * 0.7), s * 0.5 * (0.6 + rnd() * 0.5), s * (1 + rnd() * 0.7));
+    d.updateMatrix();
+    cobIM.setMatrixAt(ncob, d.matrix);
+    cobIM.setColorAt(ncob, col.setHSL(0.075 + rnd() * 0.03, 0.05 + rnd() * 0.05, 0.34 + rnd() * 0.34));
+    ncob++;
+  }
+  cobIM.count = ncob;
+  cobIM.instanceMatrix.needsUpdate = true;
+  if (cobIM.instanceColor) cobIM.instanceColor.needsUpdate = true;
+  cobIM.frustumCulled = true;
+  g.add(cobIM);
 
   return { group: g, colliders: cols.filter((c) => {
     const q = road.nearest(c.x, c.z, 24);

@@ -321,6 +321,7 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
     roof: mk({ color: 16777215 }, 0.85),
     deck: mk({ color: 0x5d5a55 }, 0.94),
     pier: mk({ color: 13817210 }, 0.95),
+    steel: mk({ color: 0x62686e }, 0.46, 0.72),
     cross: mk({ color: 16777215, map: crossTex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }, 0.98)
   };
   if (macroTex) {

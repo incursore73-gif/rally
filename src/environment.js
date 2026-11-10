@@ -63,6 +63,40 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
   scene.add(sky, sun, sun.target, hemi, sunTarget);
   scene.fog = new THREE.Fog(11454172, 80, preset.fogFar);
   const GRAY = new THREE.Color("#8a939c");
+  // nuvole: sprite billboard soffici, seguono la camera in orizzontale (come il cielo)
+  const cloudTex = (() => {
+    if (typeof document === "undefined") return null;
+    const c = document.createElement("canvas");
+    c.width = 256;
+    c.height = 128;
+    const g2 = c.getContext("2d");
+    for (let i = 0; i < 8; i++) {
+      const x = 40 + Math.random() * 176, y = 48 + Math.random() * 38, r = 20 + Math.random() * 36;
+      const gr = g2.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, "rgba(255,255,255,.5)");
+      gr.addColorStop(1, "rgba(255,255,255,0)");
+      g2.fillStyle = gr;
+      g2.fillRect(0, 0, 256, 128);
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  let cloudMats = [], cloudG = null;
+  if (cloudTex) {
+    cloudG = new THREE.Group();
+    for (let i = 0; i < 6; i++) {
+      const mat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.72, depthWrite: false, fog: true });
+      mat.rotation = (i - 2.5) * 0.07;
+      const sp = new THREE.Sprite(mat);
+      sp.scale.set(950 + (i % 3) * 190, 340 + (i % 4) * 80, 1);
+      const a = i / 6 * 6.283;
+      sp.position.set(Math.cos(a) * (1300 + (i % 3) * 380), 280 + (i % 4) * 75, Math.sin(a) * (1300 + (i % 2) * 420) - 400);
+      cloudMats.push(mat);
+      cloudG.add(sp);
+    }
+    scene.add(cloudG);
+  }
   function applyLighting() {
     const p = palette(hour), el = Math.asin(Math.sin((hour - 6) / 12 * Math.PI) * 0.92), az = 2.2;
     {
@@ -98,6 +132,13 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
       scene.fog.far = rain ? Math.min(ff, 1400) : ff * (0.92 + 0.18 * day);
     }
     scene.fog.near = rain ? 25 : 55;
+    if (cloudMats.length) {
+      const cc = p.top.clone().lerp(p.hor, 0.5).lerp(new THREE.Color(16777215), 0.6);
+      for (const m of cloudMats) {
+        m.color.copy(cc);
+        m.opacity = rain ? 0.45 : 0.72;
+      }
+    }
     scene.background = p.top.clone().lerp(p.hor, 0.35);
     renderer.shadowMap.enabled = preset.shadows && shadowsOn;
     sun.castShadow = preset.shadows && shadowsOn && el > 0.05;
@@ -254,12 +295,20 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
     // Da chiamare ogni frame: il sole (ombre) segue la zona osservata e il cielo segue la camera.
     update(camera, focus) {
       sky.position.copy(camera.position);
+      if (cloudG) cloudG.position.set(camera.position.x, 0, camera.position.z);
       const f = focus || camera.position;
       sun.target.position.copy(f);
       sun.position.copy(f).addScaledVector(sunDir, 500);
     },
     dispose() {
       clear();
+      if (cloudG) {
+        scene.remove(cloudG);
+        for (const m of cloudMats) m.dispose();
+        cloudTex.dispose();
+        cloudG = null;
+        cloudMats = [];
+      }
       scene.remove(sky, sun, sun.target, hemi, sunTarget);
       sky.geometry.dispose();
       sky.material.dispose();
