@@ -650,14 +650,12 @@ let RAIN=false,rainP=null,copS=null,copI=0,copL=[],noteEl=null;
  b.onclick=()=>{uiSnd("ui");sync();p.style.display="flex"};
  g("s_ok").onclick=()=>{uiSnd("ui");p.style.display="none"};
  g("s_fs").onclick=()=>{uiSnd("ui");$("#fs").click()};
- g("s_vtest").onclick=()=>{uiSnd("ui");pickVoice();say("Prova voce copilota. Se senti questa frase, la voce funziona.")};
+ g("s_vtest").onclick=()=>{uiSnd("ui");say("Prova voce copilota. Se senti questa frase, la voce funziona.")};
  p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value};
  p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;SET.steer=+g("s_steer").value;SET.quality=g("s_q").value;saveSet();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
 const GR={hair:["tornante",1],vh:["uno",1],c90:["due",2],sweep:["quattro, largo",4],kink:["cinque, leggera",5],chic:["doppia, tre",3]};
 function noteInfo(n){const P=S.P,a=i=>Math.atan2(P[i].ny,P[i].nx),m=Math.min(S.N-1,Math.max(n.i0+1,Math.round((n.i0+n.i1)/2)));let d=a(m)-a(n.i0);d=Math.atan2(Math.sin(d),Math.cos(d));return{right:d>0}}
-let itVoice=null;function pickVoice(){if(!window.speechSynthesis)return;try{const it=speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().indexOf("it")===0);itVoice=it.find(v=>/google/i.test(v.name))||it.find(v=>/natural|neural|online/i.test(v.name))||it[0]||null}catch(e){itVoice=null}}
-if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
-function say(t){if(!SET.voice||!window.speechSynthesis||muted)return;try{if(speechSynthesis.speaking||speechSynthesis.pending)speechSynthesis.cancel();setTimeout(()=>{try{const mk=v=>{const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";if(v)u.voice=v;u.rate=1.15;u.volume=1;u.pitch=1;u.onerror=()=>{try{if(v)speechSynthesis.speak(mk(null))}catch(e){}};return u};speechSynthesis.speak(mk(itVoice))}catch(e){}},40)}catch(e){}}
+function say(t){if(!SET.voice||!window.speechSynthesis||muted)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";u.rate=1.15;speechSynthesis.speak(u)}catch(e){}}
 function phrase(n){if(n.t==="bridge")return"ponte";if(n.t==="jump")return"salto, dritto";if(n.t==="ford")return"guado";const d=n.right?"destra":"sinistra";return n.t==="hair"?"tornante "+d:d+" "+GR[n.t][0]}
 function cop(){if(copS!==S){copS=S;copI=0;copL=S.notes.filter(n=>n.t!=="kink"||n.ang>.25).map(n=>Object.assign({},n,n.t==="bridge"?{right:false}:noteInfo(n)));for(const j of S.J)copL.push({i0:j.i,i1:j.i,t:"jump",right:false});for(const f of S.F)copL.push({i0:f[0],i1:f[1],t:"ford",right:false});copL.sort((a,b)=>a.i0-b.i0);
   if(!noteEl){noteEl=document.createElement("div");noteEl.id="note";noteEl.style.display="none";document.body.appendChild(noteEl)}}
