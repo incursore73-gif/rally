@@ -234,17 +234,17 @@ function audio(fr,rev0,gear,thr,slip,wet,off){
  const V=au.v8;
  if(V){const rpm=1500+rev*5200+gear*90;V.rate.setTargetAtTime(rpm/900,t,.045);
   V.gain.setTargetAtTime(mute?0:.5+(thr?.35:0)+rev*.12,t,.06);V.lp.setTargetAtTime(1500+rev*3200+(thr?1000:0),t,.07)}
+ const talk=!!(SET.voice&&window.speechSynthesis&&speechSynthesis.speaking);
  if(au.eng){au.g.gain.setTargetAtTime(0,t,.05);
   const ft=58+gear*5+rev*108,wob=idle?Math.sin(t*5.1)*.011+Math.sin(t*12.3)*.006+Math.sin(t*2.3)*.008:0,fd=1+wob-(cut?.035:0),tcE=lim?.012:.05,cl=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
   let w=[cl((112-ft)/42,0,1),cl(Math.min((ft-62)/40,(190-ft)/55),0,1),cl((ft-118)/48,0,1)];
   const nn=Math.sqrt(w[0]*w[0]+w[1]*w[1]+w[2]*w[2])||1;
-  const lv=mute?0:((thr?1:.72)+rev*.12)*(cut?.28:1)*(idle?1+.07*Math.sin(t*9.4):1);
+  const lv=mute?0:((thr?1:.72)+rev*.12)*(cut?.28:1)*(idle?1+.07*Math.sin(t*9.4):1)*(talk?.72:1);
   au.eng.forEach((E,i)=>{E.rate.setTargetAtTime(ft*fd/E.f,t,lim?.012:.04);E.gain.setTargetAtTime(lv*[w[0],w[1],w[2]*.707,w[2]*.707][i]/nn,t,tcE);E.lp.setTargetAtTime(3800+rev*2400+(thr?4200:0),t,.08)})}
  const gvl=ST[lvl].srf==="gravel",crA=mute?0:Math.min(1,fr*1.6)*(1+slip*.8)*(gvl?.9:off?.65:0);
  au.cr.g.setTargetAtTime(crA,t,.08);au.cr.r.setTargetAtTime(.8+fr*.9,t,.1);au.cr.f.setTargetAtTime(2200+fr*2200,t,.1);
  au.scr.ng.setTargetAtTime(mute?0:aScrape*.55,t,.03);au.scr.og.setTargetAtTime(mute?0:aScrape*.12,t,.03);const scF=700+fr*500+Math.sin(t*37)*60;au.scr.of.setTargetAtTime(scF,t,.03);au.scr.ff.setTargetAtTime(scF*1.5,t,.03);au.scr.nf.setTargetAtTime(2000+aScrape*1500,t,.05);aScrape*=.82;
  const cabv=cam3m===1;au.wh.f.setTargetAtTime(180+fr*1900,t,.06);au.wh.g.setTargetAtTime(mute?0:Math.min(1,fr*1.5)*(thr?.013:.02)*(cabv?1.8:1),t,.08);
- const talk=!!(SET.voice&&window.speechSynthesis&&window.speechSynthesis.speaking);
  if(MST){MST.cab.setTargetAtTime(cabv?4200:20000,t,.15);MST.g.setTargetAtTime((cabv?.72:.62)*(talk?.38:1),t,talk?.05:.3)}
  au.road.g.gain.setTargetAtTime(mute?0:fr*.06+(wet?.18:0)+(off?.1:0),t,.1);au.road.fl.frequency.setTargetAtTime(500+fr*1500,t,.1);
  const sk=ST[lvl].srf==="tarmac"?1:ST[lvl].srf==="gravel"?.6:.4,act=Math.max(0,slip-.2)/.8*Math.min(1,fr*3);
@@ -640,7 +640,7 @@ let RAIN=false,rainP=null,copS=null,copI=0,copL=[],noteEl=null;
 {const b=document.getElementById("cfg");
  const p=document.createElement("div");p.id="cfgp";
  p.innerHTML='<div class="sw"><div class="sh"><span class="stt">Impostazioni</span><label class="fpsl"><span>Mostra FPS</span><input type="checkbox" id="s_fps"></label><button id="s_ok" class="btn go">Chiudi</button></div><div class="sg">'
- +'<section><h3>Audio</h3><label><span>Audio generale</span><input type="checkbox" id="s_snd"></label><label><span>Copilota (voce)</span><input type="checkbox" id="s_voice"></label><label><span>Musica</span><input type="checkbox" id="s_music"></label></section>'
+ +'<section><h3>Audio</h3><label><span>Audio generale</span><input type="checkbox" id="s_snd"></label><label><span>Copilota (voce)</span><input type="checkbox" id="s_voice"></label><label><span>Prova voce copilota</span><button id="s_vtest" class="btn g">▶ Test</button></label><label><span>Musica</span><input type="checkbox" id="s_music"></label></section>'
  +'<section><h3>Guida</h3><label><span>Vista</span><select id="s_cam"><option value="0">Inseguimento</option><option value="1">Cofano</option><option value="2">Paraurti</option></select></label><label><span>Cofano visibile</span><select id="s_hood"><option value="0">Bassa</option><option value="1">Media</option><option value="2">Alta</option></select></label><label class="rg"><span>Sensibilità sterzo</span><input type="range" id="s_steer" min="60" max="150" step="5"></label><button id="s_fs" class="btn g">⛶ Schermo intero</button></section>'
  +'<section><h3>Grafica</h3><label><span>Qualità</span><select id="s_q"><option value="high">Alta</option><option value="perf">Prestazioni</option></select></label><label><span>Ombre</span><input type="checkbox" id="s_shadows"></label><label class="rg"><span>Luminosità</span><input type="range" id="s_b" min="0.7" max="2" step="0.05"></label></section>'
  +'<section><h3>Ambiente</h3><label><span>Meteo</span><select id="s_weather"><option value="auto">Automatico</option><option value="clear">Sereno</option><option value="rain">Pioggia</option></select></label><label><span>Ora</span><select id="s_time"><option value="auto">Automatica</option><option value="day">Giorno</option><option value="dusk">Tramonto</option><option value="night">Notte</option></select></label><small>Meteo e ora si applicano alla prossima prova.</small></section>'
@@ -650,13 +650,14 @@ let RAIN=false,rainP=null,copS=null,copI=0,copL=[],noteEl=null;
  b.onclick=()=>{uiSnd("ui");sync();p.style.display="flex"};
  g("s_ok").onclick=()=>{uiSnd("ui");p.style.display="none"};
  g("s_fs").onclick=()=>{uiSnd("ui");$("#fs").click()};
+ g("s_vtest").onclick=()=>{uiSnd("ui");pickVoice();say("Prova voce copilota. Se senti questa frase, la voce funziona.")};
  p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value};
  p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;SET.steer=+g("s_steer").value;SET.quality=g("s_q").value;saveSet();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
 const GR={hair:["tornante",1],vh:["uno",1],c90:["due",2],sweep:["quattro, largo",4],kink:["cinque, leggera",5],chic:["doppia, tre",3]};
 function noteInfo(n){const P=S.P,a=i=>Math.atan2(P[i].ny,P[i].nx),m=Math.min(S.N-1,Math.max(n.i0+1,Math.round((n.i0+n.i1)/2)));let d=a(m)-a(n.i0);d=Math.atan2(Math.sin(d),Math.cos(d));return{right:d>0}}
-let itVoice=null;function pickVoice(){if(!window.speechSynthesis)return;try{const vs=speechSynthesis.getVoices();itVoice=vs.find(v=>v.lang&&v.lang.toLowerCase().indexOf("it")===0)||null}catch(e){}}
+let itVoice=null;function pickVoice(){if(!window.speechSynthesis)return;try{const it=speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().indexOf("it")===0);itVoice=it.find(v=>/google/i.test(v.name))||it.find(v=>/natural|neural|online/i.test(v.name))||it[0]||null}catch(e){itVoice=null}}
 if(window.speechSynthesis){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
-function say(t){if(!SET.voice||!window.speechSynthesis||muted)return;try{if(speechSynthesis.speaking||speechSynthesis.pending)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";if(itVoice)u.voice=itVoice;u.rate=1.15;u.volume=1;u.pitch=1;setTimeout(()=>{try{speechSynthesis.speak(u)}catch(e){}},40)}catch(e){}}
+function say(t){if(!SET.voice||!window.speechSynthesis||muted)return;try{if(speechSynthesis.speaking||speechSynthesis.pending)speechSynthesis.cancel();setTimeout(()=>{try{const mk=v=>{const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";if(v)u.voice=v;u.rate=1.15;u.volume=1;u.pitch=1;u.onerror=()=>{try{if(v)speechSynthesis.speak(mk(null))}catch(e){}};return u};speechSynthesis.speak(mk(itVoice))}catch(e){}},40)}catch(e){}}
 function phrase(n){if(n.t==="bridge")return"ponte";if(n.t==="jump")return"salto, dritto";if(n.t==="ford")return"guado";const d=n.right?"destra":"sinistra";return n.t==="hair"?"tornante "+d:d+" "+GR[n.t][0]}
 function cop(){if(copS!==S){copS=S;copI=0;copL=S.notes.filter(n=>n.t!=="kink"||n.ang>.25).map(n=>Object.assign({},n,n.t==="bridge"?{right:false}:noteInfo(n)));for(const j of S.J)copL.push({i0:j.i,i1:j.i,t:"jump",right:false});for(const f of S.F)copL.push({i0:f[0],i1:f[1],t:"ford",right:false});copL.sort((a,b)=>a.i0-b.i0);
   if(!noteEl){noteEl=document.createElement("div");noteEl.id="note";noteEl.style.display="none";document.body.appendChild(noteEl)}}
