@@ -2,6 +2,10 @@
 
 Gioco di rally in terza persona sui passi alpini, con la giocabilità originale (fisica con derapate e freno a mano, fantasma, settori, copilota vocale, replay con camera TV, medaglie, danni, meteo, ora del giorno, controlli touch in orizzontale) sopra l'ambiente alpino 3D procedurale (Three.js r160, moduli ES).
 
+## Micro Racing 3D (`micro.html`)
+
+Secondo gioco, stile "micro machine" a **vista dall'alto**: circuito chiuso sulla sabbia ben visibile, 4 auto giocattolo, 3 giri contro 3 avversari AI, classifica e minimappa. Fuori pista l'auto **rallenta** sulla sabbia (max ~13 m/s) e le barriere fanno scivolare l'auto senza bloccarla. Controlli: a sinistra GAS/FRENO, a destra sterzo a rotazione; tastiera frecce/WASD; fullscreen + blocco orizzontale al via. Tutto procedurale: serve solo `micro.html` + `micro.js` (Three.js da CDN). Record salvato in `localStorage`. Hook di debug/test: `window.MICRO` (stato, auto, fisica). Test tracciato: `tests/micro_track.mjs` (lunghezza, raggi di curva, auto-intersezioni).
+
 - `index.html` – pagina, importmap di Three.js e caricamento di `game.js`.
 - `game.js` – logica di gioco e rendering (script classico). Usa `window.ALPINE.createEnvironment`.
 - `src/` – ambiente alpino: `environment.js` (API e atmosfera), `road.js`, `terrain.js`, `vegetation.js`, `materials.js`, `config.js`, `noise.js`.
