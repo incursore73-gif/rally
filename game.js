@@ -650,7 +650,11 @@ let RAIN=false,rainP=null,copS=null,copI=0,copL=[],noteEl=null;
  b.onclick=()=>{uiSnd("ui");sync();p.style.display="flex"};
  g("s_ok").onclick=()=>{uiSnd("ui");p.style.display="none"};
  g("s_fs").onclick=()=>{uiSnd("ui");$("#fs").click()};
- g("s_vtest").onclick=()=>{uiSnd("ui");say("Prova voce copilota. Se senti questa frase, la voce funziona.")};
+ g("s_vtest").onclick=()=>{uiSnd("ui");if(!window.speechSynthesis){flashMsg("SINTESI VOCALE ASSENTE IN QUESTO BROWSER","gm");msgT=15;return}
+  const vs=speechSynthesis.getVoices();try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance("Prova voce copilota. Se senti questa frase, la voce funziona.");u.lang="it-IT";u.rate=1.15;let started=false;
+  u.onstart=()=>{started=true;flashMsg("VOCE PARTITA ("+(vs.length||0)+" voci nel browser) — se non la senti, il volume e' a livello di sistema/dispositivo","gm");msgT=12};
+  u.onerror=e=>{flashMsg("ERRORE VOCE: "+(e.error||"sconosciuto")+" — voci browser: "+(vs.length||0),"gm");msgT=15};
+  speechSynthesis.speak(u);setTimeout(()=>{if(!started){flashMsg("NESSUNA FRASE AVVIATA — voci browser: "+(vs.length||0)+(vs.length?"":": NON CI SONO VOCI, installa il motore vocale o usa Chrome/Edge"),"gm");msgT=15}},2500)}catch(e){flashMsg("VOCE NON DISPONIBILE: "+e.message,"gm");msgT=15}};
  p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value};
  p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;SET.steer=+g("s_steer").value;SET.quality=g("s_q").value;saveSet();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
 const GR={hair:["tornante",1],vh:["uno",1],c90:["due",2],sweep:["quattro, largo",4],kink:["cinque, leggera",5],chic:["doppia, tre",3]};
