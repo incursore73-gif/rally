@@ -42,6 +42,18 @@ function renderModelInfo(){
     +'<div class="row"><span class="k">Peso</span><span class="v">~1.230 kg</span></div>'
     +'<div class="row"><span class="k">0–100 km/h</span><span class="v">~4,5 s</span></div>';
 }
+function renderParts(gltf){
+  const el=document.querySelector('#grgpartsb'); if(!el) return;
+  if(!gltf||!gltf.scene){ el.textContent='—'; return; }
+  const rows=[];
+  gltf.scene.traverse(o=>{
+    if(!o.isMesh) return;
+    const m=o.material, names=Array.isArray(m)?m.map(x=>x&&x.name||'(senza nome)'): [m&&m.name||'(senza nome)'];
+    rows.push({mesh:o.name||'(mesh)', mats:[...new Set(names)].join(', ')});
+  });
+  if(!rows.length){ el.textContent='Nessuna mesh trovata'; return; }
+  el.innerHTML='<ul>'+rows.map(r=>'<li><span class="nm mono">'+r.mesh+'</span><span class="tm mono">'+r.mats+'</span></li>').join('')+'</ul>';
+}
 
 export function initGarage({ button, overlay, canvas, close, hint, title, url }) {
   const btn = document.querySelector(button);
@@ -144,7 +156,9 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     garage.scene.add(model);
     garage.model = model;
     garage.size = size;
+    garage.gltf = gltf;
     renderModelInfo();
+    renderParts(gltf);
 
     const maxDim = Math.max(size.x, size.y, size.z);
 
@@ -196,6 +210,7 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     if (tip) { tip.classList.remove('h'); tip.textContent = HINT_DEFAULT; }
     renderRecords();
     renderModelInfo();
+    if (garage.gltf) renderParts(garage.gltf); else { const el=document.querySelector('#grgpartsb'); if(el) el.textContent='Caricamento…'; }
     if (!renderer) setup();
     resize();
     if (!raf) loop();
@@ -203,10 +218,12 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     if (!open) return; // chiuso mentre caricava
     if (r.ok) {
       if (!garage.model) placeModel(r.gltf);
+      else if (!garage.gltf) { garage.gltf=r.gltf; renderParts(r.gltf); }
       if (tip) tip.textContent = HINT_DEFAULT;
     } else {
       if (tip) tip.textContent = 'Auto 3D non disponibile: ' + r.why;
       if (ttl) ttl.classList.add('h');
+      const el=document.querySelector('#grgpartsb'); if(el) el.textContent='Modello non disponibile';
     }
   }
 
