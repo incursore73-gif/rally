@@ -378,7 +378,7 @@ function recompute(){
  input.thr=t;input.brk=0;input.hb=h;wheelId=st===null?null:1;wheelVal=st===null?0:st;
  $("#gas").classList.toggle("on",!!t);$("#hb").classList.toggle("on",!!h)}
 function tmapClear(){tmap.clear();recompute()}
-const skipEv=e=>e.target.closest&&e.target.closest(".ov,#snd,#qbtn,#rpb,#cfg,#cfgp,#cam3,#rot");
+const skipEv=e=>e.target.closest&&e.target.closest(".ov,#grg,#snd,#qbtn,#rpb,#cfg,#cfgp,#cam3,#rot");
 ["touchstart","touchmove","touchend","touchcancel"].forEach(n=>addEventListener(n,e=>{if(skipEv(e))return;e.preventDefault();tmap.clear();for(const t of e.touches)tmap.set(t.identifier,{x:t.clientX,y:t.clientY});recompute()},{passive:false}));
 addEventListener("mousedown",e=>{if(skipEv(e))return;mouseDown=true;tmap.set("m",{x:e.clientX,y:e.clientY});recompute()});
 addEventListener("mousemove",e=>{if(mouseDown){tmap.set("m",{x:e.clientX,y:e.clientY});recompute()}});

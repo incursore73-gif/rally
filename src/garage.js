@@ -193,6 +193,9 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
   }
 
   btn.addEventListener('click', show);
+  // pointerdown oltre a click: sui dispositivi touch un preventDefault su touchstart
+  // (vedi skipEv in game.js) puo' impedire la generazione del click
+  cls.addEventListener('pointerdown', hide);
   cls.addEventListener('click', hide);
   addEventListener('keydown', (e) => { if (open && e.key === 'Escape') hide(); });
 }
