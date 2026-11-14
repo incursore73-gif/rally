@@ -6,14 +6,14 @@ import {createRoad,buildRoadMeshes,buildFurniture} from './road.js';
 import {buildVegetation} from './vegetation.js';
 import {THEMES} from './themes.js';
 var KEYS = [
-  [0, "#02050b", "#0a1222", "#08101c", "#7f93c8", 0.06, 0.26],
-  [5.5, "#243a66", "#f0b07a", "#cfa996", "#ff9a55", 0.55, 0.46],
-  [8, "#3f79c9", "#cfe6f8", "#b8d0e6", "#ffe0ad", 1.05, 0.82],
-  [12, "#2f72d8", "#d6ecff", "#b7d3ec", "#fff4de", 1.25, 0.92],
-  [17, "#3e7ace", "#d8e8f6", "#bfd5e8", "#ffe6bf", 1.1, 0.86],
-  [19.2, "#2b3f73", "#f4ad6c", "#d7a58f", "#ff8642", 0.62, 0.46],
-  [21.5, "#02050b", "#0a1222", "#08101c", "#7f93c8", 0.06, 0.26],
-  [24, "#02050b", "#0a1222", "#08101c", "#7f93c8", 0.06, 0.26]
+  [0, "#03060d", "#10182a", "#0c1220", "#8899cc", 0.08, 0.3],
+  [5.5, "#3c4f7c", "#e9a46e", "#c9a58c", "#ff9a55", 0.6, 0.5],
+  [8, "#5b8fd6", "#c4dcf0", "#b6cde0", "#ffe2b8", 1.1, 0.85],
+  [12, "#3f7fd8", "#bcd8f2", "#a9c4de", "#fff6e6", 1.3, 0.95],
+  [17, "#4f86d0", "#cfe0ee", "#bccfdf", "#ffe9c9", 1.15, 0.9],
+  [19.2, "#3a4a78", "#f0a05e", "#d19a82", "#ff8a45", 0.7, 0.5],
+  [21.5, "#03060d", "#10182a", "#0c1220", "#8899cc", 0.08, 0.3],
+  [24, "#03060d", "#10182a", "#0c1220", "#8899cc", 0.08, 0.3]
 ];
 var lerpHex = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t);
 function palette(h) {
@@ -29,9 +29,9 @@ function skyMesh() {
     fog: false,
     uniforms: { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() } },
     vertexShader: "varying vec3 v;void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
-    fragmentShader: "varying vec3 v;uniform vec3 top,hor,sunCol,sunDir;void main(){vec3 d=normalize(v);float h=max(d.y,0.);float k=pow(h,.42);vec3 zen=mix(top,top*vec3(.92,.96,1.08),smoothstep(.35,1.,h));vec3 c=mix(hor,zen,k);float hband=1.-smoothstep(0.,.22,h);c=mix(c,hor*vec3(1.04,1.01,.96)+sunCol*.06,hband*.55);float s=max(dot(d,sunDir),0.);c+=sunCol*(pow(s,1400.)*2.4+pow(s,220.)*.22+pow(s,18.)*.10);float mie=pow(max(0.,dot(d,normalize(sunDir+vec3(0.,.12,0.)))),6.);c+=sunCol*mie*.06*smoothstep(-.05,.25,d.y);if(d.y<0.){float g=min(1.,-d.y*3.5);c=mix(hor,hor*vec3(.58,.62,.7),g);}gl_FragColor=vec4(c,1.);}"
+    fragmentShader: "varying vec3 v;uniform vec3 top,hor,sunCol,sunDir;void main(){vec3 d=normalize(v);float h=max(d.y,0.);vec3 c=mix(hor,top,pow(h,.5));float s=max(dot(d,sunDir),0.);c+=sunCol*(pow(s,900.)*3.+pow(s,12.)*.18);if(d.y<0.)c=mix(hor,hor*.6,min(1.,-d.y*4.));gl_FragColor=vec4(c,1.);}"
   });
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(6400, 32, 16), m);
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(6400, 24, 14), m);
   mesh.frustumCulled = false;
   mesh.renderOrder = -10;
   return mesh;
@@ -63,40 +63,6 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
   scene.add(sky, sun, sun.target, hemi, sunTarget);
   scene.fog = new THREE.Fog(11454172, 80, preset.fogFar);
   const GRAY = new THREE.Color("#8a939c");
-  // nuvole: sprite billboard soffici, seguono la camera in orizzontale (come il cielo)
-  const cloudTex = (() => {
-    if (typeof document === "undefined") return null;
-    const c = document.createElement("canvas");
-    c.width = 256;
-    c.height = 128;
-    const g2 = c.getContext("2d");
-    for (let i = 0; i < 8; i++) {
-      const x = 40 + Math.random() * 176, y = 48 + Math.random() * 38, r = 20 + Math.random() * 36;
-      const gr = g2.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, "rgba(255,255,255,.5)");
-      gr.addColorStop(1, "rgba(255,255,255,0)");
-      g2.fillStyle = gr;
-      g2.fillRect(0, 0, 256, 128);
-    }
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    return t;
-  })();
-  let cloudMats = [], cloudG = null;
-  if (cloudTex) {
-    cloudG = new THREE.Group();
-    for (let i = 0; i < 6; i++) {
-      const mat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.72, depthWrite: false, fog: true });
-      mat.rotation = (i - 2.5) * 0.07;
-      const sp = new THREE.Sprite(mat);
-      sp.scale.set(950 + (i % 3) * 190, 340 + (i % 4) * 80, 1);
-      const a = i / 6 * 6.283;
-      sp.position.set(Math.cos(a) * (1300 + (i % 3) * 380), 280 + (i % 4) * 75, Math.sin(a) * (1300 + (i % 2) * 420) - 400);
-      cloudMats.push(mat);
-      cloudG.add(sp);
-    }
-    scene.add(cloudG);
-  }
   function applyLighting() {
     const p = palette(hour), el = Math.asin(Math.sin((hour - 6) / 12 * Math.PI) * 0.92), az = 2.2;
     {
@@ -121,36 +87,26 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
     sky.material.uniforms.sunCol.value.copy(p.sun);
     sky.material.uniforms.sunDir.value.copy(sunDir);
     sun.color.copy(p.sun);
-    const day = Math.max(0, Math.min(1, (el + 0.08) / 0.7));
-    sun.intensity = el > 0 ? p.sunI * sunScale * (0.85 + 0.25 * day) : p.sunI * sunScale * 0.18;
-    hemi.color.copy(p.hor).lerp(p.top, 0.35);
-    hemi.groundColor.copy(scene.fog.color || p.fog).multiplyScalar(0.55);
-    hemi.intensity = p.hemi * (0.75 + 0.25 * day) * (rain ? 0.9 : 1);
+    sun.intensity = el > 0 ? p.sunI * sunScale : p.sunI * sunScale * 0.2;
+    hemi.intensity = p.hemi;
     scene.fog.color.copy(p.fog);
     {
       const ff = preset.fogFar * ((THEMES[cfg.theme] || THEMES.alpine).fogK || 1);
-      scene.fog.far = rain ? Math.min(ff, 1400) : ff * (0.92 + 0.18 * day);
+      scene.fog.far = rain ? Math.min(ff, 1500) : ff;
     }
-    scene.fog.near = rain ? 25 : 55;
-    if (cloudMats.length) {
-      const cc = p.top.clone().lerp(p.hor, 0.5).lerp(new THREE.Color(16777215), 0.6);
-      for (const m of cloudMats) {
-        m.color.copy(cc);
-        m.opacity = rain ? 0.45 : 0.72;
-      }
-    }
-    scene.background = p.top.clone().lerp(p.hor, 0.35);
+    scene.fog.near = rain ? 30 : 80;
+    scene.background = p.hor.clone();
     renderer.shadowMap.enabled = preset.shadows && shadowsOn;
     sun.castShadow = preset.shadows && shadowsOn && el > 0.05;
     if (sun.castShadow) {
       sun.shadow.mapSize.set(preset.shadowMap, preset.shadowMap);
       const c = sun.shadow.camera;
-      c.left = c.bottom = -120;
-      c.right = c.top = 120;
+      c.left = c.bottom = -110;
+      c.right = c.top = 110;
       c.near = 10;
-      c.far = 1200;
-      sun.shadow.bias = -4e-4;
-      sun.shadow.normalBias = 0.35;
+      c.far = 1100;
+      sun.shadow.bias = -6e-4;
+      sun.shadow.normalBias = 0.4;
     }
   }
   function clear() {
@@ -253,7 +209,7 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
       return state.terrain.heightAt(x, z);
     },
     get colliders() {
-      return state.furn && state.furn.colliders && state.furn.colliders.length ? state.furn.colliders.concat(state.veg.colliders) : state.veg.colliders;
+      return state.veg.colliders;
     },
     get guardFlags() {
       return state.furn.flags;
@@ -295,20 +251,12 @@ export function createEnvironment(scene, renderer, userCfg = {}) {
     // Da chiamare ogni frame: il sole (ombre) segue la zona osservata e il cielo segue la camera.
     update(camera, focus) {
       sky.position.copy(camera.position);
-      if (cloudG) cloudG.position.set(camera.position.x, 0, camera.position.z);
       const f = focus || camera.position;
       sun.target.position.copy(f);
       sun.position.copy(f).addScaledVector(sunDir, 500);
     },
     dispose() {
       clear();
-      if (cloudG) {
-        scene.remove(cloudG);
-        for (const m of cloudMats) m.dispose();
-        cloudTex.dispose();
-        cloudG = null;
-        cloudMats = [];
-      }
       scene.remove(sky, sun, sun.target, hemi, sunTarget);
       sky.geometry.dispose();
       sky.material.dispose();

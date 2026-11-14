@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Alpine Drift 3D</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23e8200f'/><text x='50' y='72' font-size='62' text-anchor='middle' font-family='Arial' font-weight='bold' fill='white'>A</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,700;1,800&display=swap"><style>
 :root{--bg:#0e1210;--fg:#eef1ea;--mut:#98a28f;--red:#e8200f;--card:#1a211a;--line:#2e3a2e;--sat:env(safe-area-inset-top,0px);--sar:env(safe-area-inset-right,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px)}
 *{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:none}
@@ -40,8 +39,6 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%}
 #hb{flex:1;border-color:rgba(255,190,40,.8)!important}
 #pedals button.on{background:rgba(255,255,255,.35)}
 #fs{position:fixed;top:calc(8px + var(--sat));left:50%;margin-left:28px;width:40px;height:40px;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:rgba(10,16,10,.5);color:#fff;font-size:18px;z-index:3}
-#qbtn{display:none;position:fixed;top:calc(8px + var(--sat));right:calc(8px + var(--sar));z-index:4;border:1px solid rgba(255,255,255,.22);background:rgba(10,16,10,.38);color:rgba(255,255,255,.88);font:600 13px "Barlow Condensed","Arial Narrow",sans-serif;border-radius:16px;padding:6px 10px;line-height:1}
-.inrace #qbtn{display:block}
 #wz{position:fixed;right:0;top:0;bottom:0;width:44%}
 #wheel{position:absolute;right:calc(34px + var(--sar));bottom:calc(14px + var(--sab));width:min(210px,52vh);height:min(210px,52vh);border-radius:50%;border:14px solid rgba(255,255,255,.55);background:rgba(10,16,10,.4)}
 #wheel::before{content:"";position:absolute;left:50%;top:50%;width:74%;height:12px;margin:-6px 0 0 -37%;background:rgba(255,255,255,.55);border-radius:6px}
@@ -60,7 +57,7 @@ h1{margin:0;font-size:clamp(34px,9vh,56px);line-height:1}h1 b{color:#ff8a1a}
 
 @media (orientation:portrait){#rot{display:flex}}
 canvas#c{display:none}canvas#gl{position:fixed;inset:0;width:100%;height:100%}#ld{position:fixed;inset:0;z-index:50;background:#0b0f14;color:#f3f5f7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font:600 15px system-ui,sans-serif}
-#ld b{font-size:26px;letter-spacing:.04em}#ldbar{width:min(300px,70vw);height:8px;border-radius:4px;background:#ffffff22;overflow:hidden}#ldb{height:100%;width:0;background:#ff6a1a;transition:width .2s}#ldver{font:600 11px/1.2 system-ui,sans-serif;color:#ffffff66;letter-spacing:.03em;margin-top:2px}#rtver{margin-top:10px;font:600 11px/1.2 system-ui,sans-serif;color:#ffffff66;letter-spacing:.03em}
+#ld b{font-size:26px;letter-spacing:.04em}#ldbar{width:min(300px,70vw);height:8px;border-radius:4px;background:#ffffff22;overflow:hidden}#ldb{height:100%;width:0;background:#ff6a1a;transition:width .2s}
 
 /* ===== menu prove: stile sportivo ===== */
 #menu{justify-content:flex-start;gap:7px;padding-top:calc(9px + var(--sat));padding-bottom:calc(16px + var(--sab));background:linear-gradient(112deg,rgba(232,32,15,.20) 0 15%,transparent 15% 100%),repeating-linear-gradient(45deg,rgba(255,255,255,.028) 0 2px,transparent 2px 7px),radial-gradient(120% 90% at 18% -10%,#1f2d25 0,#0b100d 58%,#060908 100%)}
@@ -122,13 +119,7 @@ canvas#c{display:none}canvas#gl{position:fixed;inset:0;width:100%;height:100%}#l
 #cfgp small{font-size:14px;color:#7f8b78;letter-spacing:.03em}
 #cfgp .btn.g{font-size:17px;padding:7px 12px;align-self:flex-start}
 @media (max-width:900px){#menu .mfo .tip{display:none}.btn.set{font-size:17px;padding:8px 14px 8px 12px}.btn.set .gi{font-size:20px}}
-@media (max-height:430px){#cfgp{padding-top:calc(6px + var(--sat));padding-bottom:calc(8px + var(--sab))}#cfgp .stt{font-size:28px}#cfgp .btn.go{font-size:18px;padding:6px 22px 6px 18px}#cfgp section{padding:5px 10px 7px;gap:4px}#cfgp h3{font-size:14px}#cfgp label{font-size:16px}#cfgp input[type=checkbox]{width:21px;height:21px}#cfgp select{padding:2px 8px;font-size:16px}#cfgp .sw{gap:6px}#cfgp .sg{gap:6px}#cfgp .btn.g{padding:5px 10px;font-size:16px}#cfgp small{font-size:12px}
-#cfgp .signRow{display:flex;align-items:center;gap:12px;padding:8px 0;margin:4px 0;border-top:1px solid #2a3629;border-bottom:1px solid #1e2a23}
-#cfgp .signToggle{display:flex;align-items:center;justify-content:flex-start;width:100%;padding:6px 12px;background:#1a211a;border:1px solid #2a3629;border-radius:6px;color:#eef1ea;font:600 16px "Barlow Condensed",system-ui,sans-serif}
-#cfgp .signToggleInput{width:22px;height:22px;flex-shrink:0;accent-color:#ff6a1a;cursor:pointer}
-#cfgp .signToggleLabel{margin-left:12px;white-space:nowrap}
-#cfgp .signToggle.on .signToggleInput{accent-color:#ff6a1a;background:#ff6a1a;color:#111}
-#cfgp .signRow{display:flex;align-items:center;gap:12px;padding:8px 0;margin:4px 0;border-top:1px solid #2a3629;border-bottom:1px solid #1e2a23}#cfgp .signToggle{display:flex;align-items:center;justify-content:space-between;width:100%}#cfgp .signToggleLabel{font:600 16px "Barlow Condensed",system-ui,sans-serif;color:#eef1ea}#cfgp .signToggleInput{width:36px;height:36px;accent-color:#ff6a1a;cursor:pointer}#cfgp .signToggle.on .signToggleInput{accent-color:#ff6a1a}#cfgp .signToggle{display:flex;align-items:center;justify-content:space-between;font-size:18px;padding:8px 12px;border:1px solid #3a4a3b;border-radius:6px;background:#0e140f;color:#fff;margin-top:8px}#cfgp .signToggle i{width:18px;height:18px;flex-shrink:0;background:#1a211a;border-radius:4px;margin-right:8px}#cfgp .signToggle.on i{background:#ff6a1a}}
+@media (max-height:430px){#cfgp{padding-top:calc(6px + var(--sat));padding-bottom:calc(8px + var(--sab))}#cfgp .stt{font-size:28px}#cfgp .btn.go{font-size:18px;padding:6px 22px 6px 18px}#cfgp section{padding:5px 10px 7px;gap:4px}#cfgp h3{font-size:14px}#cfgp label{font-size:16px}#cfgp input[type=checkbox]{width:21px;height:21px}#cfgp select{padding:2px 8px;font-size:16px}#cfgp .sw{gap:6px}#cfgp .sg{gap:6px}#cfgp .btn.g{padding:5px 10px;font-size:16px}#cfgp small{font-size:12px}}
 @media (max-width:640px){#cfgp .sg{grid-template-columns:1fr}}
 
 /* ===== schermata "ruota il telefono" ===== */
@@ -194,31 +185,19 @@ canvas#c{display:none}canvas#gl{position:fixed;inset:0;width:100%;height:100%}#l
 @media (max-height:400px){.rs-t{font-size:clamp(46px,16vh,70px)}.rs-d{font-size:24px}.rs-nm{font-size:22px}.rs-mm{font-size:38px}.rs-main{gap:12px}.rs-r .btn.go{font-size:21px;padding:8px 18px}.rs-l{gap:5px}.rs-sec span{font-size:16px}.rs-mc{font-size:15px}}
 @media (max-width:760px){.rs-main{grid-template-columns:minmax(0,1fr) 190px}}
 #vig{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 85% 80% at 50% 55%,transparent 52%,rgba(0,0,0,.5) 100%)}
-
-/* ===== garage: showroom 3D interattivo dell'auto ===== */
-#grg{position:fixed;inset:0;z-index:6;display:flex;flex-direction:column;background:#000}
-#grgc{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-#grgt{position:absolute;top:calc(10px + var(--sat));left:50%;transform:translateX(-50%) skewX(-9deg);z-index:2;font-style:italic;font-weight:800;font-size:26px;line-height:1;text-transform:uppercase;letter-spacing:.05em;pointer-events:none;text-shadow:0 2px 8px #000}
-#grgt b{color:#ff6a1a}
-#grgt.h{display:none}
-#grgb{position:absolute;top:calc(8px + var(--sat));left:calc(12px + var(--sal));z-index:2;font-size:19px;font-weight:800;padding:8px 18px 8px 14px}
-#grgh{position:absolute;bottom:calc(14px + var(--sab));left:50%;transform:translateX(-50%);z-index:2;color:#dfe6f3;background:rgba(10,14,22,.65);border:1px solid rgba(255,255,255,.15);padding:8px 16px;border-radius:999px;font:600 16px "Barlow Condensed",system-ui,sans-serif;letter-spacing:.04em;white-space:nowrap;pointer-events:none;transition:opacity .5s}
-#grgh.h{opacity:0}
-#grgbtn{font-size:17px;padding:8px 16px 8px 13px}#grgbtn .gi{font-size:20px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="ld"><b>ALPINE DRIFT 3D</b><div id="ldt">Caricamento…</div><div id="ldbar"><div id="ldb"></div></div><div id="ldver">__VER__</div></div>
+<div id="ld"><b>ALPINE DRIFT 3D</b><div id="ldt">Caricamento…</div><div id="ldbar"><div id="ldb"></div></div></div>
 <canvas id="c"></canvas><div id="vig"></div>
 <div id="hud"><div id="pos"></div><div id="lap"></div><div id="tm"></div><div id="rec"></div><div id="sect"></div></div>
 <canvas id="mm" width="320" height="320"></canvas>
 <div id="spdw"><div id="spd"></div><div id="revw"><div id="rev"></div></div></div>
 <audio id="bgm" src="musica.mp3" loop preload="auto"></audio>
-<button id="snd">🔊</button><button id="fs">⛶</button><button id="qbtn">✕ Esci</button><div id="msg"></div>
+<button id="snd">🔊</button><button id="fs">⛶</button><div id="msg"></div>
 <div id="pedals"><button id="gas">▲<span>ACCELERA</span></button><button id="hb">FRENO<br>A MANO</button></div>
 <div id="wz"><div id="wheel"></div></div>
-<div id="menu" class="ov"><div class="mh"><div class="logo"><span class="lg1">Alpine</span><span class="lg2">Drift 3D</span><small>Prove speciali</small></div><div class="mhr"><button id="grgbtn" class="btn set"><span class="gi">🔧</span><span class="gt">Garage</span></button><button id="cfg" class="btn set"><span class="gi">⚙</span><span class="gt">Impostazioni</span></button><button id="rly" class="btn go">Avvia rally<small>6 prove · campionato</small></button></div></div><div id="lv"></div><div class="mfo"><button id="rst" class="btn g">Azzera fantasmi e record</button><div id="mst"></div><span class="tip">tocca una prova · freno a mano per derapare · batti il tuo fantasma · <span id="mver">__VER__</span></span></div></div><div id="res" class="ov hide"></div>
-<div id="grg" class="hide"><canvas id="grgc"></canvas><div id="grgt">GARAGE <b>3D</b></div><button id="grgb" class="btn go">← Menu</button><div id="grgh">👆 1 dito = ruota · 2 dita = zoom · auto-rotazione fino al primo tocco</div></div>
-<div id="rot"><div class="rt-st"><i style="top:16%;animation-delay:0s"></i><i style="top:29%;animation-delay:.7s;width:45%"></i><i style="top:58%;animation-delay:1.3s"></i><i style="top:71%;animation-delay:.3s;width:50%"></i><i style="top:86%;animation-delay:1.9s"></i></div><div class="rt-logo">Alpine <b>Drift</b> 3D</div><div class="rt-ph"><svg class="rt-arr" viewBox="0 0 180 180" aria-hidden="true"><path d="M136 34A70 70 0 0 0 30 58" fill="none" stroke="#ff6a1a" stroke-width="7" stroke-linecap="round"/><path d="M14 66l8-26 20 20z" fill="#ff6a1a"/></svg><div class="ph"><div class="rd"></div></div></div><div class="rt-t">Ruota il telefono</div><div class="rt-s">in orizzontale per correre</div><div class="rt-m"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span><span class="off">Tocca per attivare la musica</span><span class="on">Musica attiva</span></div><div id="rtver">__VER__</div></div>
+<div id="menu" class="ov"><div class="mh"><div class="logo"><span class="lg1">Alpine</span><span class="lg2">Drift 3D</span><small>Prove speciali</small></div><div class="mhr"><button id="cfg" class="btn set"><span class="gi">⚙</span><span class="gt">Impostazioni</span></button><button id="rly" class="btn go">Avvia rally<small>6 prove · campionato</small></button></div></div><div id="lv"></div><div class="mfo"><button id="rst" class="btn g">Azzera fantasmi e record</button><div id="mst"></div><span class="tip">tocca una prova · freno a mano per derapare · batti il tuo fantasma</span></div></div><div id="res" class="ov hide"></div>
+<div id="rot"><div class="rt-st"><i style="top:16%;animation-delay:0s"></i><i style="top:29%;animation-delay:.7s;width:45%"></i><i style="top:58%;animation-delay:1.3s"></i><i style="top:71%;animation-delay:.3s;width:50%"></i><i style="top:86%;animation-delay:1.9s"></i></div><div class="rt-logo">Alpine <b>Drift</b> 3D</div><div class="rt-ph"><svg class="rt-arr" viewBox="0 0 180 180" aria-hidden="true"><path d="M136 34A70 70 0 0 0 30 58" fill="none" stroke="#ff6a1a" stroke-width="7" stroke-linecap="round"/><path d="M14 66l8-26 20 20z" fill="#ff6a1a"/></svg><div class="ph"><div class="rd"></div></div></div><div class="rt-t">Ruota il telefono</div><div class="rt-s">in orizzontale per correre</div><div class="rt-m"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span><span class="off">Tocca per attivare la musica</span><span class="on">Musica attiva</span></div></div>
 <!--BOOT--></body></html>

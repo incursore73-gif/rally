@@ -2,13 +2,9 @@
 
 Gioco di rally in terza persona sui passi alpini, con la giocabilità originale (fisica con derapate e freno a mano, fantasma, settori, copilota vocale, replay con camera TV, medaglie, danni, meteo, ora del giorno, controlli touch in orizzontale) sopra l'ambiente alpino 3D procedurale (Three.js r160, moduli ES).
 
-## Micro Racing 3D (`micro.html`)
-
-Secondo gioco, stile "micro machine" a **vista dall'alto**: circuito chiuso sulla sabbia ben visibile, 4 auto giocattolo, 3 giri contro 3 avversari AI, classifica e minimappa. Fuori pista l'auto **rallenta** sulla sabbia (max ~13 m/s) e le barriere fanno scivolare l'auto senza bloccarla. Controlli: a sinistra GAS/FRENO, a destra sterzo a rotazione; tastiera frecce/WASD; fullscreen + blocco orizzontale al via. Tutto procedurale: serve solo `micro.html` + `micro.js` (Three.js da CDN). Record salvato in `localStorage`. Hook di debug/test: `window.MICRO` (stato, auto, fisica). Test tracciato: `tests/micro_track.mjs` (lunghezza, raggi di curva, auto-intersezioni).
-
 - `index.html` – pagina, importmap di Three.js e caricamento di `game.js`.
 - `game.js` – logica di gioco e rendering (script classico). Usa `window.ALPINE.createEnvironment`.
-- `src/` – ambiente alpino: `environment.js` (API e atmosfera), `road.js`, `terrain.js`, `vegetation.js`, `materials.js`, `config.js`, `noise.js`, `garage.js` (showroom 3D).
+- `src/` – ambiente alpino: `environment.js` (API e atmosfera), `road.js`, `terrain.js`, `vegetation.js`, `materials.js`, `config.js`, `noise.js`.
 - `explore.html` + `src/main.js` – esplorazione libera dell'ambiente senza gioco.
 - `tests/` – `verify.mjs` (geometria dell'ambiente) e `play.mjs` (partite simulate headless).
 - Pubblicazione: vedi `GUIDA_GITHUB_DESKTOP.md`.
@@ -24,12 +20,6 @@ Il tracciato di ogni prova viene dal generatore originale del rally 2D (`genPath
 
 ## Come sono collegati ambiente e gioco
 Le 10 prove usano strade alpine generate da seed (`ST[i].seed`, `alp.h` = numero di tornanti, `alp.hr` = ora, `alp.rn` = pioggia). Il tracciato di gioco è la linea d'asse della strada ricampionata ogni 18 unità (1 unità = 0,06 m); la quota del terreno per l'auto è letta dalla stessa mesh visibile; alberi e rocce vicino alla strada sono anche gli ostacoli; i guardrail respingono l'auto; sugli sterrati ci sono rampe e salti.
-
-## Garage 3D (showroom interattivo)
-Dal menu, il pulsante **🔧 GARAGE** apre uno showroom 3D a schermo intero con l'auto di `auto.glb`: pavimento nero che sfuma ai bordi, luce spot con ombra, camera auto-inquadrata sulla bounding box del modello, auto-rotazione fino al primo tocco. Touch: 1 dito ruota, 2 dita zoom/pan; `Esc` o **← Menu** per uscire.
-- Codice: `src/garage.js` (modulo ES, Three.js r160 — stesso importmap del gioco), collegato in `src/boot.js`.
-- Il garage carica il GLB in modo indipendente dal gioco (con DRACO/Meshopt e percentuale nel suggerimento in basso), quindi non interferisce con `applyCarModel`.
-- Markup/CSS: overlay `#grg` e pulsante `#grgbtn` in `shell.html`; `npm run build` rigenera `index.html`.
 
 ## Auto 3D (GLB) e file singolo
 `src/boot.js` scarica `auto.glb` (file locale in radice; una volta usava `https://rally-by-tiziano.netlify.app/auto.glb`), mostra il caricamento con percentuale e, se rete/CORS/formato falliscono o passano oltre 10 s, resta sull'auto procedurale. Si prova il ripiego con `index.html?glb=https://esempio.it/non-esiste.glb`, o lo si forza con `?glb=off`.
