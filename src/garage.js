@@ -31,19 +31,16 @@ function renderRecords(){
   if(!any) html='<div class="row"><span class="k">Nessun record ancora</span><span class="v">—</span></div>'+html;
   el.innerHTML=html;
 }
-function renderModelInfo(gltf,size,fileUrl){
+function renderModelInfo(){
   const el=document.querySelector('#grgmodelb'); if(!el) return;
-  let meshes=0,mats=new Set(),tris=0;
-  gltf.scene.traverse(o=>{if(o.isMesh){meshes++; if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m&&mats.add(m.uuid||m));} const g=o.geometry; if(g&&g.index) tris+=g.index.count/3; else if(g&&g.attributes&&g.attributes.position) tris+=g.attributes.position.count/3;}});
-  const anim=(gltf.animations&&gltf.animations.length)||0;
-  const dim=size? (size.x.toFixed(2)+' × '+size.y.toFixed(2)+' × '+size.z.toFixed(2)+' m') : '—';
-  const file=(typeof fileUrl==='string'&&fileUrl)?fileUrl.split('/').pop():'auto.glb';
-  el.innerHTML='<div class="row"><span class="k">File</span><span class="v">'+file+'</span></div>'
-    +'<div class="row"><span class="k">Dimensioni</span><span class="v">'+dim+'</span></div>'
-    +'<div class="row"><span class="k">Mesh</span><span class="v">'+meshes+'</span></div>'
-    +'<div class="row"><span class="k">Materiali</span><span class="v">'+mats.size+'</span></div>'
-    +'<div class="row"><span class="k">Triangoli</span><span class="v">'+Math.round(tris).toLocaleString('it-IT')+'</span></div>'
-    +'<div class="row"><span class="k">Animazioni</span><span class="v">'+anim+'</span></div>';
+  el.innerHTML='<div class="row"><span class="k">Modello</span><span class="v">Ford Fiesta Rally2</span></div>'
+    +'<div class="row"><span class="k">Motore</span><span class="v">1.6L Turbo 4 cil.</span></div>'
+    +'<div class="row"><span class="k">Potenza</span><span class="v">~290 CV</span></div>'
+    +'<div class="row"><span class="k">Coppia</span><span class="v">~420 Nm</span></div>'
+    +'<div class="row"><span class="k">Trazione</span><span class="v">Integrale 4WD</span></div>'
+    +'<div class="row"><span class="k">Cambio</span><span class="v">Sequenziale 5 marce</span></div>'
+    +'<div class="row"><span class="k">Peso</span><span class="v">~1.230 kg</span></div>'
+    +'<div class="row"><span class="k">0–100 km/h</span><span class="v">~4,5 s</span></div>';
 }
 
 export function initGarage({ button, overlay, canvas, close, hint, title, url }) {
@@ -147,7 +144,7 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     garage.scene.add(model);
     garage.model = model;
     garage.size = size;
-    renderModelInfo(gltf, size, url);
+    renderModelInfo();
 
     const maxDim = Math.max(size.x, size.y, size.z);
 
@@ -198,6 +195,7 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     ov.classList.remove('hide');
     if (tip) { tip.classList.remove('h'); tip.textContent = HINT_DEFAULT; }
     renderRecords();
+    renderModelInfo();
     if (!renderer) setup();
     resize();
     if (!raf) loop();
@@ -205,12 +203,10 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     if (!open) return; // chiuso mentre caricava
     if (r.ok) {
       if (!garage.model) placeModel(r.gltf);
-      else renderModelInfo(r.gltf, garage.size, url);
       if (tip) tip.textContent = HINT_DEFAULT;
     } else {
       if (tip) tip.textContent = 'Auto 3D non disponibile: ' + r.why;
       if (ttl) ttl.classList.add('h');
-      const el=document.querySelector('#grgmodelb'); if(el) el.textContent='Modello non disponibile';
     }
   }
 
