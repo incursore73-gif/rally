@@ -1,12 +1,21 @@
 export var THEMES = {
   alpine: {
-    road: { style: "switchback" },
+    road: { style: "switchback", length: 1800, cx: 0, xHalf: 150, wild: 0.4, maxTurn: 0.5, step: 40, techP: 0.3 },
     terrain: { wallX: 470, wallK: 0.3, baseSlope: 0.26, noiseAmp: 34 },
     pal: { gr: "#3e6b28", me: "#5f8438", sc: "#8b8c74", ro: "#7d7367", dk: "#57503f", sn: true, snow: "#f6fafd", hz: "#a9c3de", strata: 0.12, strataF: 1.25 },
     veg: { type: "conifer", density: 1.15, treeLine: true, hsl: [0.29, 0.36, 0.32, 0.62, 0.24, 0.52] },
     rock: 9075304,
     fogK: 0.7,
     gorgeK: 0.45
+  },
+  // Varianti alpine: stili diversi per varietà di pista
+  alpineVariant: {
+    // "swift": curve fluide, lunghe, poche svolte tecniche
+    swift: { road: { style: "switchback", length: 2000, cx: 0, xHalf: 160, wild: 0.3, maxTurn: 0.4, step: 45, techP: 0.25 } },
+    // "technical": curve strette, tecniche, più svolte tech
+    technical: { road: { style: "switchback", length: 1600, cx: 0, xHalf: 130, wild: 0.6, maxTurn: 0.7, step: 35, techP: 0.4 } },
+    // "flow": miscela di switchback e meander fluido
+    flow: { road: { style: "meander", length: 1800, cx: 0, xHalf: 150, wild: 0.5, maxTurn: 0.55, step: 40, techP: 0.35 } }
   },
   forest: {
     road: { style: "meander", length: 2300, cx: 0, xHalf: 150, wild: 0.5, maxTurn: 0.6, step: 40, techP: 0.3 },

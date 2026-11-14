@@ -108,6 +108,7 @@ function drawAsphalt(g, S, R) {
   blotches(g, S, R, 4, 24 * k, 60 * k, "0,0,0", "0,0,0", 0.06, 0.13);
   const nc = 2 + (R() * 2 | 0);
   for (let i = 0; i < nc; i++) crack(g, S, R, 30 + R() * (S - 60), 30 + R() * (S - 60), R() * 6.28, (110 + R() * 150) * k, (0.8 + R() * 0.8) * m, 0);
+  oilStain(g, S, R, 6);
 }
 function drawMasonry(g, S, R, bump) {
   const rows = 6, rowH = S / rows;
@@ -183,6 +184,104 @@ function drawAsphaltRough(g, S, R) {
     g.fillRect((ux - 0.05) * S, 0, 0.1 * S, S);
   }
   grain(g, S, S, 2600, 0.1);
+}
+function oilStain(g, S, R, n) {
+  for (let i = 0; i < n; i++) {
+    const x = R() * S, y = R() * S, r = 15 + R() * (R() < 0.5 ? 30 : 60), a = 0.3 + R() * 0.4;
+    g.fillStyle = `rgba(20,20,20,${a})`;
+    g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+}
+function signArrows(g, S, R, n, color) {
+  const k = S / 512;
+  color = color || "255,255,255";
+  for (let i = 0; i < n; i++) {
+    const x = R() * S, y = R() * S, sz = 20 + R() * 20;
+    g.fillStyle = `rgba(${color},${0.8 + R() * 0.2})`;
+    // Draw arrow shaft
+    g.fillRect(x - 8, y - 1, 16, 2);
+    // Draw arrowhead
+    const a = R() * 6.28;
+    g.fillStyle = `rgba(${color},1)`;
+    g.beginPath();
+    g.moveTo(x + 6 * Math.cos(a), y + 6 * Math.sin(a));
+    g.lineTo(x - 6 * Math.cos(a - 2.1), y - 6 * Math.sin(a - 2.1));
+    g.lineTo(x - 3 * Math.cos(a), y - 3 * Math.sin(a));
+    g.lineTo(x + 6 * Math.cos(a + 2.1), y + 6 * Math.sin(a + 2.1));
+    g.lineTo(x + 6 * Math.cos(a), y + 6 * Math.sin(a));
+    g.fill();
+    // Reset color for next
+    g.fillStyle = `rgba(${color},${0.8 + R() * 0.2})`;
+  }
+}
+function signSpeedLimit(g, S, R, n, limit) {
+  const k = S / 512;
+  const num = limit || "50";
+  for (let i = 0; i < n; i++) {
+    const x = R() * S, y = R() * S, sz = 25 + R() * 15;
+    // Circle background
+    g.fillStyle = "rgba(255,255,255,0.9)";
+    g.beginPath();
+    g.arc(x, y, sz, 0, Math.PI * 2);
+    g.fill();
+    // Number
+    g.fillStyle = "rgba(0,0,0,0.8)";
+    g.font = "bold 24px Arial";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText(num, x, y);
+    // Reset font
+    g.fillStyle = "rgba(0,0,0,1)";
+  }
+}
+function drawSign(g, S, R, n, type, color) {
+  // Dispatch to appropriate sign type
+  switch (type) {
+    case "arrow-left":
+      signArrows(g, S, R, n, color || "255,0,0");
+      break;
+    case "arrow-right":
+      signArrows(g, S, R, n, color || "0,255,0");
+      break;
+    case "arrow-up":
+      signArrows(g, S, R, n, color || "0,0,255");
+      break;
+    case "speed-50":
+      signSpeedLimit(g, S, R, n, 50);
+      break;
+    case "speed-70":
+      signSpeedLimit(g, S, R, n, 70);
+      break;
+    case "caution":
+      // Generic caution diamond
+      for (let i = 0; i < n; i++) {
+        const x = R() * S, y = R() * S, sz = 20 + R() * 15;
+        g.fillStyle = "rgba(255,255,255,0.9)";
+        g.beginPath();
+        g.moveTo(x, y - sz);
+        g.lineTo(x + sz, y);
+        g.lineTo(x, y + sz);
+        g.lineTo(x - sz, y);
+        g.closePath();
+        g.fill();
+        // Exclamation mark
+        g.fillStyle = "rgba(0,0,0,0.9)";
+        g.font = "bold 20px Arial";
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.fillText("!", x, y);
+        g.fillStyle = "rgba(255,255,255,0.9)";
+      }
+      break;
+    default:
+      // Generic rectangular sign
+      for (let i = 0; i < n; i++) {
+        const x = R() * S, y = R() * S, w = 30 + R() * 20, h = 15 + R() * 10;
+        g.fillStyle = "rgba(255,255,255,0.9)";
+        g.fillRect(x - w / 2, y - h / 2, w, h);
+      }
+      break;
+  }
 }
 function drawGravel(g, S, R) {
   const k = S / 512, m = Math.max(1, k);

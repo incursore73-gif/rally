@@ -365,6 +365,55 @@ export function buildFurniture(R, heightAt, M, cfg) {
     }
   }
   inst(new THREE.BoxGeometry(1, 0.7, 0.05), M.sign, chevM, true);
+  // ----- SEGNALETICA STRADALE PERMANENTE -----
+  // Genera segnali a intervalli regolari lungo la pista
+  const signStep = Math.max(20, Math.round(R.length / 8)); // circa 8 segnali per pista
+  const speedLimits = [50, 70, 50, 50]; // sequenza limiti in km/h
+  const signData = [];
+  for (let s = signStep; s < R.length - signStep; s += signStep) {
+    // Ogni tot metri: segnale velocità
+    const idx = Math.min(speedLimits.length - 1, Math.floor(s / (R.length / speedLimits.length)));
+    const limit = speedLimits[idx];
+    signData.push({ s: s, type: "speed-" + limit, side: 0 });
+    // Ogni 2° segnale: cartello curva pericolosa
+    if (s % (signStep * 2) === 0) {
+      const kIdx = Math.floor(s / rc.sampleStep);
+      if (R.K && kIdx < R.K.length && Math.abs(R.K[kIdx]) > 0.1) {
+        signData.push({ s: s - signStep * 0.5, type: "caution", side: 0 });
+      }
+    }
+    // Freccia direzione ogni 3° segnale
+    if (s % (signStep * 3) === 0 && R.K) {
+      const kIdx = Math.floor(s / rc.sampleStep);
+      if (R.K && kIdx < R.K.length && Math.abs(R.K[kIdx]) > 0.05) {
+        signData.push({ s: s, type: R.K[kIdx] > 0 ? "arrow-right" : "arrow-left", side: 0 });
+      }
+    }
+  }
+  // Rimuovi duplicati vicini
+  const uniq = [];
+  for (const p of signData) {
+    if (uniq.length === 0 || Math.abs(uniq[uniq.length - 1].s - p.s) > signStep / 2) uniq.push(p);
+  }
+  // Aggiungi segnali al gruppo
+  if (uniq.length > 0) {
+    // Usa i punti strada esistenti per posizione
+    const signGeo = new THREE.PlaneGeometry(0.6, 0.4);
+    const signOffset = rc.width / 2 + 0.5; // fuori dal bordo interno
+    for (const p of uniq) {
+      const idx = Math.floor(p.s / R.ds) || 0;
+      const x = R.X[idx], z = R.Z[idx], y = R.Y[idx];
+      const sign = new THREE.Mesh(signGeo, M.sign);
+      sign.position.set(x + (p.side * signOffset), y + 0.5, z);
+      // Ruota per allinearsi con la tangente della strada
+      if (idx < R.N - 1) {
+        const tx = R.TX[idx], tz = R.TZ[idx];
+        sign.rotation.y = Math.atan2(-tz, tx);
+      }
+      sign.castShadow = true;
+      g.add(sign);
+    }
+  }
   /* ---- paesaggio a bordo pista: muri a secco, case, incroci, ponti (estetica + collider statici) ---- */
   const sideCfg = ({ alpine: { walls: 0.55, houses: 16, bridges: 3, crossings: 4 }, forest: { walls: 0.22, houses: 10, bridges: 2, crossings: 3 }, canyon: { walls: 0.15, houses: 0, bridges: 2, crossings: 3 }, coast: { walls: 0.1, houses: 10, bridges: 2, crossings: 3 } })[cfg.theme] || { walls: 0.4, houses: 12, bridges: 2, crossings: 3 };
   const rnd2 = mulberry32((cfg.seed | 0) * 2654435 + 97), wcol = new THREE.Color(), colsF = [];
