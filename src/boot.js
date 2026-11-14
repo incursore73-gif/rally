@@ -3,6 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {createEnvironment} from './environment.js';
+import {initGarage} from './garage.js';
 var QG = new URLSearchParams(location.search).get("glb");
 var CAR_URL = (QG && QG !== "off" ? QG : null) || window.CAR_GLB_URL || "auto.glb";
 var TIMEOUT = 1e4;
@@ -11,6 +12,7 @@ window.ALPINE = { createEnvironment };
 var ld = document.getElementById("ld");
 var txt = document.getElementById("ldt");
 var bar = document.getElementById("ldb");
+initGarage({ button: "#grgbtn", overlay: "#grg", canvas: "#grgc", close: "#grgb", hint: "#grgh", title: "#grgt", url: CAR_URL });
 var prog = (p, t) => {
   if (bar) bar.style.width = p + "%";
   if (txt) txt.textContent = t;

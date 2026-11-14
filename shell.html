@@ -188,6 +188,17 @@ canvas#c{display:none}canvas#gl{position:fixed;inset:0;width:100%;height:100%}#l
 @media (max-height:400px){.rs-t{font-size:clamp(46px,16vh,70px)}.rs-d{font-size:24px}.rs-nm{font-size:22px}.rs-mm{font-size:38px}.rs-main{gap:12px}.rs-r .btn.go{font-size:21px;padding:8px 18px}.rs-l{gap:5px}.rs-sec span{font-size:16px}.rs-mc{font-size:15px}}
 @media (max-width:760px){.rs-main{grid-template-columns:minmax(0,1fr) 190px}}
 #vig{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 85% 80% at 50% 55%,transparent 52%,rgba(0,0,0,.5) 100%)}
+
+/* ===== garage: showroom 3D interattivo dell'auto ===== */
+#grg{position:fixed;inset:0;z-index:6;display:flex;flex-direction:column;background:#000}
+#grgc{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#grgt{position:absolute;top:calc(10px + var(--sat));left:50%;transform:translateX(-50%) skewX(-9deg);z-index:2;font-style:italic;font-weight:800;font-size:26px;line-height:1;text-transform:uppercase;letter-spacing:.05em;pointer-events:none;text-shadow:0 2px 8px #000}
+#grgt b{color:#ff6a1a}
+#grgt.h{display:none}
+#grgb{position:absolute;top:calc(8px + var(--sat));left:calc(12px + var(--sal));z-index:2;font-size:19px;font-weight:800;padding:8px 18px 8px 14px}
+#grgh{position:absolute;bottom:calc(14px + var(--sab));left:50%;transform:translateX(-50%);z-index:2;color:#dfe6f3;background:rgba(10,14,22,.65);border:1px solid rgba(255,255,255,.15);padding:8px 16px;border-radius:999px;font:600 16px "Barlow Condensed",system-ui,sans-serif;letter-spacing:.04em;white-space:nowrap;pointer-events:none;transition:opacity .5s}
+#grgh.h{opacity:0}
+#grgbtn{font-size:17px;padding:8px 16px 8px 13px}#grgbtn .gi{font-size:20px}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -201,6 +212,7 @@ canvas#c{display:none}canvas#gl{position:fixed;inset:0;width:100%;height:100%}#l
 <button id="snd">🔊</button><button id="fs">⛶</button><button id="qbtn">✕ Esci</button><div id="msg"></div>
 <div id="pedals"><button id="gas">▲<span>ACCELERA</span></button><button id="hb">FRENO<br>A MANO</button></div>
 <div id="wz"><div id="wheel"></div></div>
-<div id="menu" class="ov"><div class="mh"><div class="logo"><span class="lg1">Alpine</span><span class="lg2">Drift 3D</span><small>Prove speciali</small></div><div class="mhr"><button id="cfg" class="btn set"><span class="gi">⚙</span><span class="gt">Impostazioni</span></button><button id="rly" class="btn go">Avvia rally<small>6 prove · campionato</small></button></div></div><div id="lv"></div><div class="mfo"><button id="rst" class="btn g">Azzera fantasmi e record</button><div id="mst"></div><span class="tip">tocca una prova · freno a mano per derapare · batti il tuo fantasma · <span id="mver">__VER__</span></span></div></div><div id="res" class="ov hide"></div>
+<div id="menu" class="ov"><div class="mh"><div class="logo"><span class="lg1">Alpine</span><span class="lg2">Drift 3D</span><small>Prove speciali</small></div><div class="mhr"><button id="grgbtn" class="btn set"><span class="gi">🔧</span><span class="gt">Garage</span></button><button id="cfg" class="btn set"><span class="gi">⚙</span><span class="gt">Impostazioni</span></button><button id="rly" class="btn go">Avvia rally<small>6 prove · campionato</small></button></div></div><div id="lv"></div><div class="mfo"><button id="rst" class="btn g">Azzera fantasmi e record</button><div id="mst"></div><span class="tip">tocca una prova · freno a mano per derapare · batti il tuo fantasma · <span id="mver">__VER__</span></span></div></div><div id="res" class="ov hide"></div>
+<div id="grg" class="hide"><canvas id="grgc"></canvas><div id="grgt">GARAGE <b>3D</b></div><button id="grgb" class="btn go">← Menu</button><div id="grgh">👆 1 dito = ruota · 2 dita = zoom · auto-rotazione fino al primo tocco</div></div>
 <div id="rot"><div class="rt-st"><i style="top:16%;animation-delay:0s"></i><i style="top:29%;animation-delay:.7s;width:45%"></i><i style="top:58%;animation-delay:1.3s"></i><i style="top:71%;animation-delay:.3s;width:50%"></i><i style="top:86%;animation-delay:1.9s"></i></div><div class="rt-logo">Alpine <b>Drift</b> 3D</div><div class="rt-ph"><svg class="rt-arr" viewBox="0 0 180 180" aria-hidden="true"><path d="M136 34A70 70 0 0 0 30 58" fill="none" stroke="#ff6a1a" stroke-width="7" stroke-linecap="round"/><path d="M14 66l8-26 20 20z" fill="#ff6a1a"/></svg><div class="ph"><div class="rd"></div></div></div><div class="rt-t">Ruota il telefono</div><div class="rt-s">in orizzontale per correre</div><div class="rt-m"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span><span class="off">Tocca per attivare la musica</span><span class="on">Musica attiva</span></div><div id="rtver">__VER__</div></div>
 <!--BOOT--></body></html>
