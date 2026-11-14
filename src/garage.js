@@ -19,6 +19,33 @@ function radialTexture() {
   return new THREE.CanvasTexture(c);
 }
 
+const STAGES=["Passo alpino","Foresta del nord","Gola rossa","Colline d'autunno","Costa a strapiombo","Gran passo","Bosco dell'abbazia","Tramonto sul mare","Canyon d'asfalto","Panoramica alta"];
+const fmt=ms=>{if(ms==null||isNaN(ms))return"—";const m=Math.floor(ms/60000),s=(ms%60000)/1000;return m+":"+(s<10?"0":"")+s.toFixed(3)};
+function renderRecords(){
+  const el=document.querySelector('#grgrecb'); if(!el) return;
+  let save=null; try{save=JSON.parse(localStorage.getItem('gp_rly3_save')||'null')}catch(e){}
+  const best=(save&&save.best)||{};
+  let html='<ul>', any=false;
+  STAGES.forEach((n,i)=>{const t=best[i]; if(t!=null) any=true; html+='<li><span class="nm">'+(i+1)+'. '+n+'</span><span class="tm">'+(t!=null?fmt(t):'—')+'</span></li>';});
+  html+='</ul>';
+  if(!any) html='<div class="row"><span class="k">Nessun record ancora</span><span class="v">—</span></div>'+html;
+  el.innerHTML=html;
+}
+function renderModelInfo(gltf,size,fileUrl){
+  const el=document.querySelector('#grgmodelb'); if(!el) return;
+  let meshes=0,mats=new Set(),tris=0;
+  gltf.scene.traverse(o=>{if(o.isMesh){meshes++; if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m&&mats.add(m.uuid||m));} const g=o.geometry; if(g&&g.index) tris+=g.index.count/3; else if(g&&g.attributes&&g.attributes.position) tris+=g.attributes.position.count/3;}});
+  const anim=(gltf.animations&&gltf.animations.length)||0;
+  const dim=size? (size.x.toFixed(2)+' × '+size.y.toFixed(2)+' × '+size.z.toFixed(2)+' m') : '—';
+  const file=(typeof fileUrl==='string'&&fileUrl)?fileUrl.split('/').pop():'auto.glb';
+  el.innerHTML='<div class="row"><span class="k">File</span><span class="v">'+file+'</span></div>'
+    +'<div class="row"><span class="k">Dimensioni</span><span class="v">'+dim+'</span></div>'
+    +'<div class="row"><span class="k">Mesh</span><span class="v">'+meshes+'</span></div>'
+    +'<div class="row"><span class="k">Materiali</span><span class="v">'+mats.size+'</span></div>'
+    +'<div class="row"><span class="k">Triangoli</span><span class="v">'+Math.round(tris).toLocaleString('it-IT')+'</span></div>'
+    +'<div class="row"><span class="k">Animazioni</span><span class="v">'+anim+'</span></div>';
+}
+
 export function initGarage({ button, overlay, canvas, close, hint, title, url }) {
   const btn = document.querySelector(button);
   const ov = document.querySelector(overlay);
@@ -119,6 +146,8 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     model.position.y -= box.min.y;
     garage.scene.add(model);
     garage.model = model;
+    garage.size = size;
+    renderModelInfo(gltf, size, url);
 
     const maxDim = Math.max(size.x, size.y, size.z);
 
@@ -168,6 +197,7 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     open = true;
     ov.classList.remove('hide');
     if (tip) { tip.classList.remove('h'); tip.textContent = HINT_DEFAULT; }
+    renderRecords();
     if (!renderer) setup();
     resize();
     if (!raf) loop();
@@ -175,10 +205,12 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     if (!open) return; // chiuso mentre caricava
     if (r.ok) {
       if (!garage.model) placeModel(r.gltf);
+      else renderModelInfo(r.gltf, garage.size, url);
       if (tip) tip.textContent = HINT_DEFAULT;
     } else {
       if (tip) tip.textContent = 'Auto 3D non disponibile: ' + r.why;
       if (ttl) ttl.classList.add('h');
+      const el=document.querySelector('#grgmodelb'); if(el) el.textContent='Modello non disponibile';
     }
   }
 
