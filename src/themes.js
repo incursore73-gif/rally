@@ -1,12 +1,12 @@
 export var THEMES = {
   alpine: {
     road: { style: "switchback" },
-    terrain: {},
-    pal: { gr: "#4f6834", me: "#76864a", sc: "#7f8378", ro: "#6f6d66", dk: "#45433e", sn: true, snow: "#f1f5f9", hz: "#8fa4c2", strata: 0.12, strataF: 1.25 },
-    veg: { type: "conifer", density: 1.15, treeLine: true, hsl: [0.26, 0.35, 0.28, 0.55, 0.2, 0.46] },
-    rock: 7829367,
-    fogK: 0.92,
-    gorgeK: 1
+    terrain: { wallX: 470, wallK: 0.3, baseSlope: 0.26, noiseAmp: 34 },
+    pal: { gr: "#3e6b28", me: "#5f8438", sc: "#8b8c74", ro: "#7d7367", dk: "#57503f", sn: true, snow: "#f6fafd", hz: "#a9c3de", strata: 0.12, strataF: 1.25 },
+    veg: { type: "conifer", density: 1.15, treeLine: true, hsl: [0.29, 0.36, 0.32, 0.62, 0.24, 0.52] },
+    rock: 9075304,
+    fogK: 0.7,
+    gorgeK: 0.45
   },
   forest: {
     road: { style: "meander", length: 2300, cx: 0, xHalf: 150, wild: 0.5, maxTurn: 0.6, step: 40, techP: 0.3 },

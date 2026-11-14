@@ -22,18 +22,18 @@ var mrg = (l) => {
 var WH = "#ffffff";
 var TR = "#4a3626";
 function treeGeo(type) {
-  if (type === "broadleaf") return mrg([paint(new THREE.CylinderGeometry(0.18, 0.3, 2.6, 5).translate(0, 1.3, 0), TR), paint(new THREE.IcosahedronGeometry(2.1, 1).scale(1, 1.15, 1).translate(0, 4.3, 0), WH), paint(new THREE.IcosahedronGeometry(1.4, 1).translate(0.9, 5.4, 0.3), WH)]);
-  if (type === "pine") return mrg([paint(new THREE.CylinderGeometry(0.2, 0.32, 5.8, 5).translate(0, 2.9, 0), TR), paint(new THREE.CylinderGeometry(2.7, 2.2, 0.9, 8).translate(0, 6.4, 0), WH), paint(new THREE.CylinderGeometry(1.8, 1.4, 0.7, 8).translate(0.5, 7.2, 0), WH)]);
-  if (type === "shrub") return mrg([paint(new THREE.IcosahedronGeometry(1.1, 1).scale(1.4, 0.7, 1.4).translate(0, 0.6, 0), WH), paint(new THREE.IcosahedronGeometry(0.7, 0).translate(0.9, 0.4, 0.3), WH)]);
-  const t = paint(new THREE.CylinderGeometry(0.15, 0.28, 1.8, 5).translate(0, 0.9, 0), TR), c = [[1.7, 3.4, 3.1, "#264a2c"], [1.3, 3, 5, "#2c5632"], [0.85, 2.4, 6.7, "#336338"]].map(([r2, h, y, col]) => paint(new THREE.ConeGeometry(r2, h, 7).translate(0, y, 0), col));
+  if (type === "broadleaf") return mrg([paint(new THREE.CylinderGeometry(0.16, 0.3, 2.8, 6).translate(0, 1.4, 0), TR), paint(new THREE.IcosahedronGeometry(2.1, 1).scale(1, 1.12, 1).translate(0, 4.3, 0), WH), paint(new THREE.IcosahedronGeometry(1.4, 1).translate(0.9, 5.3, 0.3), WH), paint(new THREE.IcosahedronGeometry(1.05, 1).translate(-0.85, 4.9, -0.35), WH)]);
+  if (type === "pine") return mrg([paint(new THREE.CylinderGeometry(0.18, 0.32, 5.6, 6).translate(0, 2.8, 0), TR), paint(new THREE.CylinderGeometry(0.1, 0.14, 2.2, 5).rotateZ(0.5).translate(0.55, 5.2, 0), TR), paint(new THREE.IcosahedronGeometry(2.4, 1).scale(1, 0.42, 1).translate(0.15, 6.3, 0), WH), paint(new THREE.IcosahedronGeometry(1.55, 1).scale(1, 0.4, 1).translate(0.75, 5.7, 0.1), WH), paint(new THREE.IcosahedronGeometry(1.15, 1).scale(1, 0.45, 1).translate(-0.45, 7, -0.1), WH)]);
+  if (type === "shrub") return mrg([paint(new THREE.IcosahedronGeometry(1.1, 1).scale(1.4, 0.7, 1.4).translate(0, 0.6, 0), WH), paint(new THREE.IcosahedronGeometry(0.7, 0).translate(0.9, 0.4, 0.3), WH), paint(new THREE.IcosahedronGeometry(0.55, 0).translate(-0.6, 0.5, 0.55), WH)]);
+  const t = paint(new THREE.CylinderGeometry(0.15, 0.3, 2.6, 6).translate(0, 1.3, 0), TR), c = [[1.95, 3.4, 3, "#2a5230"], [1.5, 2.9, 4.6, "#2f5c34"], [1.05, 2.5, 6.1, "#356739"], [0.6, 1.9, 7.4, "#3d7340"]].map(([r2, h, y, col], i) => paint(new THREE.ConeGeometry(r2, h, 9).translate(i % 2 ? 0.14 : -0.12, y, i % 3 ? 0.1 : -0.12), col));
   return mrg([t, ...c]);
 }
-var treeFar = (type) => type === "conifer" ? mrg([paint(new THREE.ConeGeometry(1.5, 7, 5).translate(0, 4.2, 0), "#2c5632")]) : mrg([paint(new THREE.IcosahedronGeometry(type === "shrub" ? 1.3 : 2.2, 0).translate(0, type === "shrub" ? 0.7 : 4, 0), WH)]);
+var treeFar = (type) => type === "conifer" ? mrg([paint(new THREE.ConeGeometry(1.5, 7, 5).translate(0, 4.2, 0), "#2f5c34")]) : mrg([paint(new THREE.IcosahedronGeometry(type === "shrub" ? 1.3 : 2.2, 0).translate(0, type === "shrub" ? 0.7 : 4, 0), WH)]);
 function rockGeo(rnd) {
   const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position, map = /* @__PURE__ */ new Map(), ph = [rnd() * 6.28, rnd() * 6.28, rnd() * 6.28];
   for (let i = 0; i < p.count; i++) {
     const x0 = p.getX(i), y0 = p.getY(i), z0 = p.getZ(i), k = x0.toFixed(3) + y0.toFixed(3) + z0.toFixed(3);
-    if (!map.has(k)) map.set(k, (0.78 + rnd() * 0.4) * (1 + 0.2 * Math.sin(x0 * 2.1 + ph[0]) * Math.sin(y0 * 1.7 + ph[1]) + 0.12 * Math.sin(z0 * 3.3 + ph[2] + x0 * 1.3)));
+    if (!map.has(k)) map.set(k, (0.72 + rnd() * 0.56) * (1 + 0.26 * Math.sin(x0 * 2.1 + ph[0]) * Math.sin(y0 * 1.7 + ph[1]) + 0.16 * Math.sin(z0 * 3.3 + ph[2] + x0 * 1.3) + 0.1 * Math.sin(x0 * 5.1 + z0 * 4.3 + ph[1])));
     const f = map.get(k);
     p.setXYZ(i, x0 * f, Math.max(y0 * f * 0.8, -0.42), z0 * f);
   }
@@ -134,7 +134,7 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
       if ((near && s > 0.38) || (!near && !small)) cols.push({ x, z, r: s * (small ? 0.7 : 0.85), rock: true });
       rm.setMatrixAt(nr, d.matrix);
       const lit = 0.3 + rnd() * 0.3 + (small ? 0.04 : 0);
-      rm.setColorAt(nr, col.setHSL(0.075 + rnd() * 0.03, 0.05 + rnd() * 0.04, lit));
+      rm.setColorAt(nr, col.setHSL(0.065 + rnd() * 0.045, 0.13 + rnd() * 0.13, lit));
       nr++;
     }
     rm.count = nr;
@@ -162,7 +162,7 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
     d.scale.set(s * (1 + rnd() * 0.7), s * 0.5 * (0.6 + rnd() * 0.5), s * (1 + rnd() * 0.7));
     d.updateMatrix();
     cobIM.setMatrixAt(ncob, d.matrix);
-    cobIM.setColorAt(ncob, col.setHSL(0.075 + rnd() * 0.03, 0.05 + rnd() * 0.05, 0.34 + rnd() * 0.34));
+    cobIM.setColorAt(ncob, col.setHSL(0.065 + rnd() * 0.045, 0.11 + rnd() * 0.1, 0.34 + rnd() * 0.34));
     ncob++;
   }
   cobIM.count = ncob;
