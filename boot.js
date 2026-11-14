@@ -6,7 +6,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {createEnvironment} from './environment.js';
 
 const QG=new URLSearchParams(location.search).get('glb');   // prova: ?glb=URL_SBAGLIATO simula il ripiego, ?glb=off lo forza
-const CAR_URL=(QG&&QG!=='off'?QG:null)||window.CAR_GLB_URL||'https://rally-by-tiziano.netlify.app/auto.glb',TIMEOUT=10000;
+const CAR_URL=(QG&&QG!=='off'?QG:null)||window.CAR_GLB_URL||'auto.glb',TIMEOUT=10000;
 window.THREE=THREE;window.ALPINE={createEnvironment};
 const ld=document.getElementById('ld'),txt=document.getElementById('ldt'),bar=document.getElementById('ldb');
 const prog=(p,t)=>{if(bar)bar.style.width=p+'%';if(txt)txt.textContent=t};
