@@ -1,12 +1,9 @@
-// Garage: showroom 3D interattivo dell'auto (stesso stile del viewer esterno,
-// ma su API three 0.160 — la stessa usata dal gioco). Touch: 1 dito ruota, 2 dita zoom/pan.
+// Garage: showroom 3D interattivo dell'auto (stile viewer esterno, ma su API three 0.160 -- la stessa usata dal gioco).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-
-const DEC_PATH = 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/';
 
 // Texture radiale: fa sfumare il pavimento ai bordi (niente linea d'orizzonte)
 function radialTexture() {
@@ -33,8 +30,6 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
 
   let renderer = null, controls = null, mixer = null, clock = null, raf = 0, open = false;
   let modelReady = null; // promise del modello (una sola volta)
-
-  const garage = { scene: null, camera: null, dir: null, model: null };
 
   const HINT_DEFAULT = tip ? tip.textContent : '';
 
@@ -69,13 +64,15 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     clock = new THREE.Clock();
   }
 
+  const garage = { scene: null, camera: null, dir: null, model: null };
+
   function loadModel() {
     if (modelReady) return modelReady;
     modelReady = new Promise((resolve) => {
       try {
         const L = new GLTFLoader();
         const d = new DRACOLoader();
-        d.setDecoderPath(DEC_PATH);
+        d.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
         L.setDRACOLoader(d);
         L.setMeshoptDecoder(MeshoptDecoder);
         L.load(url, (g) => resolve({ ok: true, gltf: g }),
@@ -85,7 +82,7 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
               tip.textContent = 'Caricamento auto\u2026 ' + p + '%';
             }
           },
-          (err) => resolve({ ok: false, why: (err && err.message) || 'rete/CORS' }));
+          (err) => resolve({ ok: false, why: (err && err.message) || 'rete/CORS' }))
       } catch (e) { resolve({ ok: false, why: e.message }); }
     });
     return modelReady;
@@ -141,7 +138,6 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
     const spot = new THREE.SpotLight(0xffffff, 2.6);
     spot.decay = 0;
     spot.position.set(maxDim * 1.2, maxDim * 3.5, maxDim * 0.8);
-    spot.target.position.set(0, size.y * 0.4, 0);
     spot.angle = 0.45;
     spot.penumbra = 0.8;
     spot.castShadow = true;
@@ -171,7 +167,7 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
   async function show() {
     open = true;
     ov.classList.remove('hide');
-    if (tip) { tip.classList.remove('h'); tip.textContent = 'Caricamento auto\u2026'; }
+    if (tip) { tip.classList.remove('h'); tip.textContent = HINT_DEFAULT; }
     if (!renderer) setup();
     resize();
     if (!raf) loop();
@@ -193,9 +189,6 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
   }
 
   btn.addEventListener('click', show);
-  // pointerdown oltre a click: sui dispositivi touch un preventDefault su touchstart
-  // (vedi skipEv in game.js) puo' impedire la generazione del click
-  cls.addEventListener('pointerdown', hide);
   cls.addEventListener('click', hide);
   addEventListener('keydown', (e) => { if (open && e.key === 'Escape') hide(); });
 }
