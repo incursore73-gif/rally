@@ -4,6 +4,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {createEnvironment} from './environment.js';
+import {initGarage} from './garage.js';
 
 const QG=new URLSearchParams(location.search).get('glb');   // prova: ?glb=URL_SBAGLIATO simula il ripiego, ?glb=off lo forza
 const CAR_URL=(QG&&QG!=='off'?QG:null)||window.CAR_GLB_URL||'auto.glb',TIMEOUT=10000;
@@ -27,6 +28,7 @@ const game=new Promise(res=>{const s=document.createElement('script');
   if(window.__GAME_SRC__){s.textContent=window.__GAME_SRC__;document.body.appendChild(s);res()}
   else{s.src='game.js?v=8';s.onload=()=>res();s.onerror=()=>res();document.body.appendChild(s)}});
 const [r]=await Promise.all([glb,game]);
+initGarage({button:'#grgbtn',overlay:'#grg',canvas:'#grgc',close:'#grgb',hint:'#grgh',title:'#grgt',url:'auto.glb'})
 if(r.ok){prog(100,'Auto 3D pronta');const ok=typeof window.applyCarModel==='function'&&window.applyCarModel(r.scene);if(!ok)toast('Auto 3D non utilizzabile (struttura inattesa): uso il modello integrato.')}
 else{console.warn('GLB non caricato:',r.why);toast('Auto 3D non disponibile ('+r.why+'): uso il modello integrato.')}
 if(ld)ld.remove();

@@ -189,6 +189,7 @@ export function initGarage({ button, overlay, canvas, close, hint, title, url })
   }
 
   btn.addEventListener('click', show);
+  cls.addEventListener('pointerdown', hide);
   cls.addEventListener('click', hide);
   addEventListener('keydown', (e) => { if (open && e.key === 'Escape') hide(); });
 }
