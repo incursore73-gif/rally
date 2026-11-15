@@ -49,11 +49,11 @@ function rockGeo(rnd) {
   return g;
 }
 export function buildVegetation(cfg, preset, terrain, road, M) {
-  const rnd = mulberry32(cfg.seed * 31 + 7), nz = makeNoise(cfg.seed + 99), g = new THREE.Group(), F = terrain.fineRect, hAt = terrain.heightAt, d = new THREE.Object3D(), col = new THREE.Color(), minD = cfg.veg.minRoadDist, treeLine = road.maxY + 70, cols = [], th = cfg.themeDef, VT = th.veg, sea = terrain.seaY;
-  function place(count, region, geo, far) {
-    const m = new THREE.InstancedMesh(geo, M.tree, count);
-    let n = 0;
-    for (let a = 0; a < count * 14 && n < count; a++) {
+  const rnd = mulberry32(cfg.seed * 31 + 7), nz = makeNoise(cfg.seed + 99), g = new THREE.Group(), F = terrain.fineRect, hAt = terrain.heightAt, d = new THREE.Object3D(), col = new THREE.Color(), minD = cfg.veg.minRoadDist, cols = [], th = cfg.themeDef, VT = th.veg, sea = terrain.seaY, treeLine = road.maxY + 70;
+  const NAT = window.ALPINE && window.ALPINE.natura;
+  const useGLB = !!(NAT && !preset.lambert && (NAT.trees.length || NAT.rocks.length));
+  function collectTrees(count, region, far, spots) {
+    for (let a = 0; a < count * 14 && spots.length < count; a++) {
       const x = region.x0 + rnd() * (region.x1 - region.x0), z = region.z0 + rnd() * (region.z1 - region.z0);
       if (!far && !(x > F.x0 && x < F.x1 && z > F.z0 && z < F.z1)) continue;
       if (far && x > F.x0 - 60 && x < F.x1 + 60 && z > F.z0 - 60 && z < F.z1 + 60) continue;
@@ -73,27 +73,56 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
         const q2 = road.nearest(x, z, 24);
         if (q2) cols.push({ x, z, r: 0.45 + 0.3 * s, rock: false });
       }
-      d.position.set(x, y, z);
-      d.rotation.set(0, rnd() * 6.28, 0);
-      d.scale.set(s * (0.85 + rnd() * 0.3), s * (far ? 1.3 : 1) * (0.9 + rnd() * 0.5), s * (0.85 + rnd() * 0.3));
-      d.updateMatrix();
-      m.setMatrixAt(n, d.matrix);
-      const q = VT.hsl;
-      m.setColorAt(n, col.setHSL(q[0] + rnd() * (q[1] - q[0]), q[2] + rnd() * (q[3] - q[2]), q[4] + rnd() * (q[5] - q[4])));
-      n++;
+      spots.push({ x, y, z, ry: rnd() * 6.28, sx: s * (0.85 + rnd() * 0.3), sy: s * (far ? 1.3 : 1) * (0.9 + rnd() * 0.5), sz: s * (0.85 + rnd() * 0.3) });
     }
-    m.count = n;
+    return spots.length;
+  }
+  function fill(m, spots, tint, cast) {
+    for (let i = 0; i < spots.length; i++) {
+      const sp = spots[i];
+      d.position.set(sp.x, sp.y, sp.z);
+      d.rotation.set(sp.rx || 0, sp.ry, sp.rz || 0);
+      d.scale.set(sp.sx, sp.sy, sp.sz);
+      d.updateMatrix();
+      m.setMatrixAt(i, d.matrix);
+      if (tint) m.setColorAt(i, tint(sp, col));
+    }
+    m.count = spots.length;
     m.instanceMatrix.needsUpdate = true;
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
-    m.castShadow = !far && preset.shadows;
-    m.frustumCulled = true;
+    if (m.computeBoundingSphere) m.computeBoundingSphere();
+    m.castShadow = cast && preset.shadows;
     g.add(m);
-    return n;
+    return spots.length;
   }
-  const nNear = place(Math.round(preset.trees.near * VT.density), F, treeGeo(VT.type), false), nFar = place(Math.round(preset.trees.far * Math.min(1, VT.density)), { x0: -1800, x1: 1800, z0: -2400, z1: 700 }, treeFar(VT.type), true);
-  const rg = rockGeo(rnd), rm = new THREE.InstancedMesh(rg, M.rock, preset.rocks);
-  let nr = 0;
-  for (let a = 0; a < preset.rocks * 30 && nr < preset.rocks; a++) {
+  const hslTint = (sp, c) => {
+    const q = VT.hsl;
+    return c.setHSL(q[0] + rnd() * (q[1] - q[0]), q[2] + rnd() * (q[3] - q[2]), q[4] + rnd() * (q[5] - q[4]));
+  };
+  // --- alberi vicini: varianti GLB (natura.glb) oppure procedurali ---
+  const spotsT = [];
+  let nNear = 0;
+  collectTrees(Math.round(preset.trees.near * VT.density), F, false, spotsT);
+  if (useGLB && NAT.trees.length && spotsT.length) {
+    const n = NAT.trees.length, buckets = [];
+    for (let i = 0; i < n; i++) buckets.push([]);
+    spotsT.forEach((sp, i) => buckets[(i + Math.floor(rnd() * n)) % n].push(sp));
+    buckets.forEach((b, vi) => {
+      if (!b.length) return;
+      const v = NAT.trees[vi];
+      for (const p of v.parts) fill(new THREE.InstancedMesh(p.geo.clone(), p.mat, b.length), b, (sp, c) => c.setScalar(0.85 + rnd() * 0.3), true);
+    });
+    nNear = spotsT.length;
+  } else {
+    nNear = fill(new THREE.InstancedMesh(treeGeo(VT.type), M.tree, Math.max(1, spotsT.length)), spotsT, hslTint, true);
+  }
+  // --- alberi lontani: sempre procedurali (billboard-style low cost) ---
+  const spotsF = [];
+  collectTrees(Math.round(preset.trees.far * Math.min(1, VT.density)), { x0: -1800, x1: 1800, z0: -2400, z1: 700 }, true, spotsF);
+  const nFar = fill(new THREE.InstancedMesh(treeFar(VT.type), M.tree, Math.max(1, spotsF.length)), spotsF, hslTint, false);
+  // --- rocce: vicine da natura.glb (se disponibile), lontane procedurali ---
+  const spotsRN = [], spotsRF = [];
+  for (let a = 0; a < preset.rocks * 30 && spotsRN.length + spotsRF.length < preset.rocks; a++) {
     const near = rnd() < 0.55;
     let x, z;
     if (near) {
@@ -108,18 +137,26 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
     if (q && q.d < road.hw + road.shoulder + 1.5) continue;
     if (!near && sl < 0.75) continue;
     const s = near ? 0.25 + rnd() * 0.7 : 1.2 + rnd() * 3.5;
-    d.position.set(x, y + s * 0.15, z);
-    d.rotation.set(rnd() * 0.6, rnd() * 6.28, rnd() * 0.6);
-    d.scale.set(s * (1 + rnd() * 0.5), s * (0.6 + rnd() * 0.5), s * (1 + rnd() * 0.5));
-    d.updateMatrix();
     if (near && s > 0.45 || !near) cols.push({ x, z, r: s * 0.85, rock: true });
-    rm.setMatrixAt(nr, d.matrix);
-    rm.setColorAt(nr, col.setHSL(0.09, 0.06, 0.34 + rnd() * 0.25));
-    nr++;
+    const sp = { x, z, rx: rnd() * 0.6, ry: rnd() * 6.28, rz: rnd() * 0.6, sx: s * (1 + rnd() * 0.5), sy: s * (0.6 + rnd() * 0.5), sz: s * (1 + rnd() * 0.5) };
+    if (near) sp.y = y - s * 0.15;
+    else sp.y = y + s * 0.15;
+    (near ? spotsRN : spotsRF).push(sp);
   }
-  rm.count = nr;
-  rm.castShadow = preset.shadows;
-  g.add(rm);
+  let glbRocks = 0;
+  if (useGLB && NAT.rocks.length && spotsRN.length) {
+    const n = NAT.rocks.length, buckets = [];
+    for (let i = 0; i < n; i++) buckets.push([]);
+    spotsRN.forEach((sp, i) => buckets[(i + Math.floor(rnd() * n)) % n].push(sp));
+    buckets.forEach((b, vi) => {
+      if (!b.length) return;
+      const v = NAT.rocks[vi];
+      for (const p of v.parts) glbRocks += fill(new THREE.InstancedMesh(p.geo.clone(), p.mat, b.length), b, (sp, c) => c.setScalar(0.8 + rnd() * 0.3), true);
+    });
+  }
+  const procRocks = useGLB && NAT.rocks.length ? spotsRF : spotsRF.concat(spotsRN);
+  const rg = rockGeo(rnd), rm = new THREE.InstancedMesh(rg, M.rock, Math.max(1, procRocks.length));
+  const nr = glbRocks + fill(rm, procRocks, (sp, c) => c.setHSL(0.09, 0.06, 0.34 + rnd() * 0.25), true);
   return { group: g, colliders: cols.filter((c) => {
     const q = road.nearest(c.x, c.z, 24);
     return q && q.d < 24;
