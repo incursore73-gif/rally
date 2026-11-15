@@ -55,7 +55,7 @@ function loadGLB() {
     }
   });
 }
-function loadNatura() {
+function loadOne(url, timeoutMs) {
   return new Promise((res) => {
     let done = false;
     const fin = (r2) => {
@@ -63,14 +63,13 @@ function loadNatura() {
       done = true;
       clearTimeout(to);
       res(r2);
-    }, to = setTimeout(() => fin({ ok: false, why: "timeout oltre 15 s" }), 15000);
+    }, to = setTimeout(() => fin({ ok: false, why: "timeout" }), timeoutMs);
     try {
       const L = new GLTFLoader(), d = new DRACOLoader();
       d.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
       L.setDRACOLoader(d);
       L.setMeshoptDecoder(MeshoptDecoder);
-      L.load(
-        "natura.glb",
+      L.load(url,
         (g) => fin({ ok: true, gltf: g }),
         (e) => { if (txt && e && e.total > 0) txt.textContent = "Caricamento vegetazione 3D\u2026 " + Math.min(99, Math.round(e.loaded / e.total * 100)) + "%"; },
         (err) => fin({ ok: false, why: err && err.message || "rete/CORS" })
@@ -79,6 +78,45 @@ function loadNatura() {
       fin({ ok: false, why: e.message });
     }
   });
+}
+function bakeAll(scene) {
+  scene.updateMatrixWorld(true);
+  const parts = [];
+  scene.traverse((o) => {
+    if (!o.isMesh || !o.geometry) return;
+    const geo = o.geometry.clone();
+    geo.applyMatrix4(o.matrixWorld);
+    for (const k of Object.keys(geo.attributes)) if (k !== "position" && k !== "normal" && k !== "uv") geo.deleteAttribute(k);
+    if (!geo.attributes.normal) geo.computeVertexNormals();
+    parts.push({ geo, mat: o.material });
+  });
+  return parts;
+}
+var NAT_FILES = ["albero1", "albero2", "albero3", "roccia1", "roccia2", "roccia3"];
+function loadNatura() {
+  return Promise.all(NAT_FILES.map((n) => loadOne("GLB/" + n + ".glb", 15000))).then((rs) => {
+    const trees = [], rocks = [], missed = [];
+    rs.forEach((r2, i) => {
+      const name = NAT_FILES[i];
+      if (!r2.ok) { missed.push(name); return; }
+      const kind = name.startsWith("albero") ? "tree" : "rock";
+      const parts = bakeAll(r2.gltf.scene);
+      if (!parts.length) { missed.push(name); return; }
+      normalizeAsset(parts, kind);
+      (kind === "tree" ? trees : rocks).push({ name, parts });
+    });
+    if (missed.length) console.warn("[natura] file non caricati:", missed.join(","));
+    if (trees.length || rocks.length) {
+      window.ALPINE.natura = { trees, rocks };
+      console.log("[natura] alberi:", trees.map((t) => t.name).join(",") || "-", "| rocce:", rocks.map((r2) => r2.name).join(",") || "-");
+      return { ok: true };
+    }
+    // fallback: unico natura.glb con i nomi dei nodi (albero1/2/3, roccia1/2/3)
+    return loadOne("natura.glb", 15000).then((r2) => {
+      if (!r2.ok) return { ok: false, why: r2.why };
+      return registerNatura(r2.gltf) ? { ok: true } : { ok: false, why: "mesh non riconosciute" };
+    });
+  }).catch((e) => ({ ok: false, why: e && e.message || "errore" }));
 }
 var NAT_KEYS = /^(albero|roccia|rock|tree|stone)/;
 function bakeAsset(scene, meshNames) {
@@ -162,7 +200,8 @@ if (r.ok) {
   console.warn("GLB non caricato:", r.why);
   toast("Auto 3D non disponibile (" + r.why + "): uso il modello integrato.");
 }
-if (natr && natr.ok) {
-  if (!registerNatura(natr.gltf)) toast("Vegetazione 3D non valida: uso alberi/rocce procedurali.");
-} else if (natr) console.warn("natura.glb non caricato:", natr.why);
+if (!natr || !natr.ok) {
+  console.warn("natura non caricata:", natr && natr.why);
+  toast("Vegetazione 3D non disponibile (" + (natr && natr.why || "errore") + "): uso alberi/rocce procedurali.");
+}
 if (ld) ld.remove();
