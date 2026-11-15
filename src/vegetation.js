@@ -68,12 +68,12 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
         }
         if (terrain.slopeAt(x, z) > 0.7) continue;
       } else if (Math.hypot(terrain.natural(x + 4, z) - terrain.natural(x - 4, z), terrain.natural(x, z + 4) - terrain.natural(x, z - 4)) / 8 > 0.9) continue;
-      const s = 0.8 + rnd() * 0.9;
+      const s = 0.75 + rnd() * 1.05;
       if (!far) {
         const q2 = road.nearest(x, z, 24);
         if (q2) cols.push({ x, z, r: 0.45 + 0.3 * s, rock: false });
       }
-      spots.push({ x, y, z, ry: rnd() * 6.28, sx: s * (0.85 + rnd() * 0.3), sy: s * (far ? 1.3 : 1) * (0.9 + rnd() * 0.5), sz: s * (0.85 + rnd() * 0.3) });
+      spots.push({ x, y, z, ry: rnd() * 6.28, rx: far ? 0 : (rnd() - 0.5) * 0.12, rz: far ? 0 : (rnd() - 0.5) * 0.12, sx: s * (0.85 + rnd() * 0.3), sy: s * (far ? 1.3 : 1) * (0.9 + rnd() * 0.5), sz: s * (0.85 + rnd() * 0.3) });
     }
     return spots.length;
   }
@@ -106,11 +106,11 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
   if (useGLB && NAT.trees.length && spotsT.length) {
     const n = NAT.trees.length, buckets = [];
     for (let i = 0; i < n; i++) buckets.push([]);
-    spotsT.forEach((sp, i) => buckets[(i + Math.floor(rnd() * n)) % n].push(sp));
+    spotsT.forEach((sp) => buckets[Math.floor(rnd() * n)].push(sp));
     buckets.forEach((b, vi) => {
       if (!b.length) return;
       const v = NAT.trees[vi];
-      for (const p of v.parts) fill(new THREE.InstancedMesh(p.geo.clone(), p.mat, b.length), b, (sp, c) => c.setScalar(0.85 + rnd() * 0.3), true);
+      for (const p of v.parts) fill(new THREE.InstancedMesh(p.geo.clone(), p.mat, b.length), b, (sp, c) => c.setScalar(0.78 + rnd() * 0.4), true);
     });
     nNear = spotsT.length;
   } else {
@@ -147,7 +147,7 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
   if (useGLB && NAT.rocks.length && spotsRN.length) {
     const n = NAT.rocks.length, buckets = [];
     for (let i = 0; i < n; i++) buckets.push([]);
-    spotsRN.forEach((sp, i) => buckets[(i + Math.floor(rnd() * n)) % n].push(sp));
+    spotsRN.forEach((sp) => buckets[Math.floor(rnd() * n)].push(sp));
     buckets.forEach((b, vi) => {
       if (!b.length) return;
       const v = NAT.rocks[vi];
