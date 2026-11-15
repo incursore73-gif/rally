@@ -1074,11 +1074,15 @@ function buildFurniture(R, heightAt, M, cfg) {
       let j = i;
       while (j < N && flag[j]) j++;
       if (j - i >= 6) {
-        const pts = [];
-        for (let k = i; k < j; k++) pts.push(new THREE3.Vector3(R.X[k] + R.NX[k] * side * off, R.Y[k] + 0.5, R.Z[k] + R.NZ[k] * side * off));
-        segs.push({ side, points: pts });
+        const pts = [], nx2 = [], nz2 = [];
+        for (let k = i; k < j; k++) {
+          pts.push(new THREE3.Vector3(R.X[k] + R.NX[k] * side * off, R.Y[k] + 0.5, R.Z[k] + R.NZ[k] * side * off));
+          nx2.push(R.NX[k] * side);
+          nz2.push(R.NZ[k] * side);
+        }
+        segs.push({ side, points: pts, nx: nx2, nz: nz2 });
         const step = Math.round(rl.postSpacing / ds);
-        for (let k = i; k < j; k += step) postM.push([R.X[k] + R.NX[k] * side * (off + 0.15), R.Y[k] + 0.45, R.Z[k] + R.NZ[k] * side * (off + 0.15)]);
+        for (let k = i; k < j; k += step) postM.push([R.X[k] + R.NX[k] * side * (off + 0.15), R.Y[k] + 0.34, R.Z[k] + R.NZ[k] * side * (off + 0.15)]);
       }
       i = j;
     }
@@ -1094,17 +1098,22 @@ function buildFurniture(R, heightAt, M, cfg) {
   }
   const rg = new THREE3.BufferGeometry();
   {
+    const prof = [[0.66, 0.035], [0.575, -0.04], [0.5, 0.05], [0.425, -0.04], [0.34, 0.035]], pr = prof.length;
     const P = [], I = [];
     let b = 0;
     for (const s of segs) {
-      for (let k = 0; k < s.points.length; k++) {
-        const p = s.points[k];
-        P.push(p.x, p.y, p.z, p.x, p.y + 0.32, p.z);
-        if (k < s.points.length - 1) {
-          I.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+      const L2 = s.points.length;
+      for (let k = 0; k < L2; k++) {
+        const p = s.points[k], ox = s.nx[k], oz = s.nz[k];
+        for (let j = 0; j < pr; j++) {
+          P.push(p.x + ox * prof[j][1], p.y - 0.5 + prof[j][0], p.z + oz * prof[j][1]);
         }
-        b += 2;
       }
+      for (let k = 0; k < L2 - 1; k++) for (let j = 0; j < pr - 1; j++) {
+        const a0 = b + k * pr + j, a1 = a0 + 1, a2 = a0 + pr, a3 = a2 + 1;
+        I.push(a0, a2, a1, a1, a2, a3);
+      }
+      b += L2 * pr;
     }
     rg.setAttribute("position", new THREE3.Float32BufferAttribute(P, 3));
     rg.setIndex(I);
@@ -1125,7 +1134,7 @@ function buildFurniture(R, heightAt, M, cfg) {
     m.receiveShadow = true;
     g.add(m);
   };
-  inst(new THREE3.BoxGeometry(0.1, 0.9, 0.1), M.post, postM);
+  inst(new THREE3.BoxGeometry(0.14, 0.68, 0.14), M.post, postM);
   inst(new THREE3.BoxGeometry(0.09, 0.9, 0.09), M.delin, delM);
   inst(new THREE3.BoxGeometry(3, 0.8, 0.55), M.wall, wallM, true);
   for (const h of R.hairpins) {
@@ -1135,6 +1144,61 @@ function buildFurniture(R, heightAt, M, cfg) {
     }
   }
   inst(new THREE3.BoxGeometry(1, 0.7, 0.05), M.sign, chevM, true);
+  const bannerTex = (text) => {
+    const c = document.createElement("canvas");
+    c.width = 1024;
+    c.height = 192;
+    const x = c.getContext("2d");
+    x.fillStyle = "#c81e12";
+    x.fillRect(0, 0, 1024, 192);
+    const sq = 24;
+    x.fillStyle = "#ffffff";
+    for (let i = 0; i < 22; i++) {
+      if (i % 2 === 0) {
+        x.fillRect(i * sq * 2, 0, sq, sq);
+        x.fillRect(i * sq * 2 + sq, sq, sq, sq);
+        x.fillRect(i * sq * 2, 192 - sq, sq, sq);
+        x.fillRect(i * sq * 2 + sq, 192 - sq * 2, sq, sq);
+      }
+    }
+    x.fillStyle = "#ffffff";
+    x.font = "800 108px 'Barlow Condensed', Arial, sans-serif";
+    x.textAlign = "center";
+    x.textBaseline = "middle";
+    x.fillText(text, 512, 98);
+    const t = new THREE3.CanvasTexture(c);
+    t.colorSpace = THREE3.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  };
+  try {
+    const arch = (idx, text) => {
+      const i = Math.min(N - 1, Math.max(0, idx)), cx = R.X[i], cy = R.Y[i], cz = R.Z[i], a = Math.atan2(-R.TZ[i], -R.TX[i]);
+      const w = hw + sh + 0.45, nx = R.NX[i], nz = R.NZ[i], H = 5;
+      const pg = new THREE3.BoxGeometry(0.28, H, 0.28);
+      for (const s2 of [-1, 1]) {
+        const p = new THREE3.Mesh(pg, M.post);
+        p.position.set(cx + nx * s2 * w, cy + H / 2 - 0.1, cz + nz * s2 * w);
+        p.castShadow = false;
+        g.add(p);
+      }
+      const beam = new THREE3.Mesh(new THREE3.BoxGeometry(w * 2, 0.4, 0.45), M.post);
+      beam.position.set(cx, cy + H + 0.1, cz);
+      beam.rotation.y = a;
+      beam.castShadow = false;
+      g.add(beam);
+      const bp = new THREE3.Mesh(new THREE3.PlaneGeometry(w * 2 - 0.3, 1.2), new THREE3.MeshStandardMaterial({ map: bannerTex(text), roughness: 0.85 }));
+      bp.position.set(cx, cy + H - 0.7, cz);
+      bp.rotation.y = a;
+      const bb = new THREE3.Mesh(new THREE3.PlaneGeometry(w * 2 - 0.3, 1.2), new THREE3.MeshStandardMaterial({ color: 16106642, roughness: 0.9 }));
+      bb.position.set(cx, cy + H - 0.7, cz);
+      bb.rotation.y = a + Math.PI;
+      g.add(bp, bb);
+    };
+    arch(3, "PARTENZA");
+    arch(N - 4, "ARRIVO");
+  } catch (e) {
+  }
   return { group: g, guardrails: segs, flags: { left: FL[-1], right: FL[1] }, landmarks: R.hairpins.map((h) => ({ type: "hairpin", position: h.position, s: h.s, radius: h.radius })) };
 }
 
@@ -1192,7 +1256,7 @@ function buildVegetation(cfg, preset, terrain, road, M) {
   const rnd = mulberry32(cfg.seed * 31 + 7), nz = makeNoise(cfg.seed + 99), g = new THREE4.Group(), F = terrain.fineRect, hAt = terrain.heightAt, d = new THREE4.Object3D(), col = new THREE4.Color(), minD = cfg.veg.minRoadDist, cols = [], th = cfg.themeDef, VT = th.veg, sea = terrain.seaY, treeLine = road.maxY + 70;
   const NAT = window.ALPINE && window.ALPINE.natura;
   const useGLB = !!(NAT && !preset.lambert && (NAT.trees.length || NAT.rocks.length));
-  function collectTrees(count, region, far, spots) {
+  function collectTrees(count, region, far, spots, noCol) {
     for (let a = 0; a < count * 14 && spots.length < count; a++) {
       const x = region.x0 + rnd() * (region.x1 - region.x0), z = region.z0 + rnd() * (region.z1 - region.z0);
       if (!far && !(x > F.x0 && x < F.x1 && z > F.z0 && z < F.z1)) continue;
@@ -1209,7 +1273,7 @@ function buildVegetation(cfg, preset, terrain, road, M) {
         if (terrain.slopeAt(x, z) > 0.7) continue;
       } else if (Math.hypot(terrain.natural(x + 4, z) - terrain.natural(x - 4, z), terrain.natural(x, z + 4) - terrain.natural(x, z - 4)) / 8 > 0.9) continue;
       const s = 0.75 + rnd() * 1.05;
-      if (!far) {
+      if (!far && !noCol) {
         const q2 = road.nearest(x, z, 24);
         if (q2) cols.push({ x, z, r: 0.45 + 0.3 * s, rock: false });
       }
@@ -1258,6 +1322,46 @@ function buildVegetation(cfg, preset, terrain, road, M) {
   const spotsF = [];
   collectTrees(Math.round(preset.trees.far * Math.min(1, VT.density)), { x0: -1800, x1: 1800, z0: -2400, z1: 700 }, true, spotsF);
   const nFar = fill(new THREE4.InstancedMesh(treeFar(VT.type), M.tree, Math.max(1, spotsF.length)), spotsF, hslTint, false);
+  const BUSH = useGLB && NAT.bushes || [];
+  if (useGLB && BUSH.length) {
+    const spotsB = [];
+    collectTrees(Math.round(preset.trees.near * 0.28 * VT.density), F, false, spotsB, true);
+    const n = BUSH.length, buckets = [];
+    for (let i = 0; i < n; i++) buckets.push([]);
+    spotsB.forEach((sp) => buckets[Math.floor(rnd() * n)].push(sp));
+    buckets.forEach((b, vi) => {
+      if (!b.length) return;
+      const v = BUSH[vi];
+      for (const p of v.parts) fill(new THREE4.InstancedMesh(p.geo.clone(), p.mat, b.length), b, (sp, c) => c.setScalar(0.8 + rnd() * 0.35), true);
+    });
+  }
+  const tyre = useGLB && (NAT.props || []).find((p) => p.kind === "tyre");
+  if (tyre) {
+    const spotsG = [], hp = road.hairpins || [];
+    for (const h of hp) {
+      const side = -h.side, o = road.hw + road.shoulder + 1.35;
+      for (let k = -2; k <= 2; k += 2) {
+        const i = Math.min(road.N - 1, Math.max(0, h.index + k * 2)), x = road.X[i] + road.NX[i] * side * o, z = road.Z[i] + road.NZ[i] * side * o, y = hAt(x, z);
+        spotsG.push({ x, y: y - 0.05, z, rx: 0, ry: rnd() * 6.28, rz: 0, sx: 0.9 + rnd() * 0.25, sy: 0.9 + rnd() * 0.25, sz: 0.9 + rnd() * 0.25 });
+        cols.push({ x, z, r: 0.8, rock: true });
+      }
+    }
+    for (const p of tyre.parts) fill(new THREE4.InstancedMesh(p.geo.clone(), p.mat, Math.max(1, spotsG.length)), spotsG, (sp, c) => c.setScalar(0.9 + rnd() * 0.2), true);
+  }
+  const barn = useGLB && (NAT.props || []).find((p) => p.kind === "barn");
+  if (barn) {
+    const spotsBarn = [];
+    for (let a = 0; a < 80 && spotsBarn.length < 2 + Math.floor(rnd() * 2); a++) {
+      const x = F.x0 + rnd() * (F.x1 - F.x0), z = F.z0 + rnd() * (F.z1 - F.z0), y = hAt(x, z);
+      if (sea != null && y < sea + 2.5) continue;
+      if (terrain.slopeAt(x, z) > 0.35) continue;
+      const q = road.nearest(x, z, 260);
+      if (!q || q.d < 45) continue;
+      spotsBarn.push({ x, y: y - 0.1, z, rx: 0, ry: rnd() * 6.28, rz: 0, sx: 1, sy: 1, sz: 1 });
+      cols.push({ x, z, r: 3.5, rock: true });
+    }
+    for (const p of barn.parts) fill(new THREE4.InstancedMesh(p.geo.clone(), p.mat, Math.max(1, spotsBarn.length)), spotsBarn, (sp, c) => c.setScalar(0.95 + rnd() * 0.1), true);
+  }
   const spotsRN = [], spotsRF = [];
   for (let a = 0; a < preset.rocks * 30 && spotsRN.length + spotsRF.length < preset.rocks; a++) {
     const near = rnd() < 0.55;
@@ -1874,29 +1978,34 @@ function bakeAll(scene) {
   });
   return parts;
 }
-var NAT_FILES = ["albero1", "albero2", "albero3", "roccia1", "roccia2", "roccia3"];
+var NAT_FILES = ["albero1", "albero2", "albero3", "cespuglio1", "gomme1", "fienile1", "roccia1", "roccia2", "roccia3"];
 function loadNatura() {
   return Promise.all(NAT_FILES.map((n) => loadOne("GLB/" + n + ".glb", 15e3))).then((rs) => {
-    const trees = [], rocks = [], missed = [];
+    const trees = [], rocks = [], bushes = [], props = [], missed = [];
+    const KINDS = { albero: ["tree", trees], roccia: ["rock", rocks], cespuglio: ["bush", bushes], gomme: ["tyre", props], fienile: ["barn", props] };
     rs.forEach((r2, i) => {
       const name = NAT_FILES[i];
       if (!r2.ok) {
         missed.push(name);
         return;
       }
-      const kind = name.startsWith("albero") ? "tree" : "rock";
+      const k = KINDS[name.replace(/\d+$/, "")];
+      if (!k) {
+        missed.push(name);
+        return;
+      }
       const parts = bakeAll(r2.gltf.scene);
       if (!parts.length) {
         missed.push(name);
         return;
       }
-      normalizeAsset(parts, kind);
-      (kind === "tree" ? trees : rocks).push({ name, parts });
+      normalizeAsset(parts, k[0]);
+      k[1].push({ name, parts, kind: k[0] });
     });
     if (missed.length) console.warn("[natura] file non caricati:", missed.join(","));
-    if (trees.length || rocks.length) {
-      window.ALPINE.natura = { trees, rocks };
-      console.log("[natura] alberi:", trees.map((t) => t.name).join(",") || "-", "| rocce:", rocks.map((r2) => r2.name).join(",") || "-");
+    if (trees.length || rocks.length || bushes.length || props.length) {
+      window.ALPINE.natura = { trees, rocks, bushes, props };
+      console.log("[natura] alberi:", trees.map((t) => t.name).join(",") || "-", "| rocce:", rocks.map((r2) => r2.name).join(",") || "-", "| altri:", bushes.concat(props).map((p) => p.name).join(",") || "-");
       return { ok: true };
     }
     return loadOne("natura.glb", 15e3).then((r2) => {
@@ -1926,7 +2035,8 @@ function normalizeAsset(parts, mode) {
     box.union(p.geo.boundingBox);
   }
   const size = box.getSize(new THREE7.Vector3());
-  const scale = mode === "tree" ? 7 / Math.max(size.y, 1e-3) : 2 / Math.max(size.x, size.y, size.z, 1e-3);
+  const target = { tree: 7, bush: 1, tyre: 1.05, barn: 6 }[mode];
+  const scale = target != null ? target / Math.max(size.y, 1e-3) : 2 / Math.max(size.x, size.y, size.z, 1e-3);
   const m = new THREE7.Matrix4().makeScale(scale, scale, scale).multiply(new THREE7.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2));
   for (const p of parts) p.geo.applyMatrix4(m);
 }

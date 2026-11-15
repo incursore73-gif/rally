@@ -92,23 +92,25 @@ function bakeAll(scene) {
   });
   return parts;
 }
-var NAT_FILES = ["albero1", "albero2", "albero3", "roccia1", "roccia2", "roccia3"];
+var NAT_FILES = ["albero1", "albero2", "albero3", "cespuglio1", "gomme1", "fienile1", "roccia1", "roccia2", "roccia3"];
 function loadNatura() {
   return Promise.all(NAT_FILES.map((n) => loadOne("GLB/" + n + ".glb", 15000))).then((rs) => {
-    const trees = [], rocks = [], missed = [];
+    const trees = [], rocks = [], bushes = [], props = [], missed = [];
+    const KINDS = { albero: ["tree", trees], roccia: ["rock", rocks], cespuglio: ["bush", bushes], gomme: ["tyre", props], fienile: ["barn", props] };
     rs.forEach((r2, i) => {
       const name = NAT_FILES[i];
       if (!r2.ok) { missed.push(name); return; }
-      const kind = name.startsWith("albero") ? "tree" : "rock";
+      const k = KINDS[name.replace(/\d+$/, "")];
+      if (!k) { missed.push(name); return; }
       const parts = bakeAll(r2.gltf.scene);
       if (!parts.length) { missed.push(name); return; }
-      normalizeAsset(parts, kind);
-      (kind === "tree" ? trees : rocks).push({ name, parts });
+      normalizeAsset(parts, k[0]);
+      k[1].push({ name, parts, kind: k[0] });
     });
     if (missed.length) console.warn("[natura] file non caricati:", missed.join(","));
-    if (trees.length || rocks.length) {
-      window.ALPINE.natura = { trees, rocks };
-      console.log("[natura] alberi:", trees.map((t) => t.name).join(",") || "-", "| rocce:", rocks.map((r2) => r2.name).join(",") || "-");
+    if (trees.length || rocks.length || bushes.length || props.length) {
+      window.ALPINE.natura = { trees, rocks, bushes, props };
+      console.log("[natura] alberi:", trees.map((t) => t.name).join(",") || "-", "| rocce:", rocks.map((r2) => r2.name).join(",") || "-", "| altri:", bushes.concat(props).map((p) => p.name).join(",") || "-");
       return { ok: true };
     }
     // fallback: unico natura.glb con i nomi dei nodi (albero1/2/3, roccia1/2/3)
@@ -139,7 +141,8 @@ function normalizeAsset(parts, mode) {
     box.union(p.geo.boundingBox);
   }
   const size = box.getSize(new THREE.Vector3());
-  const scale = mode === "tree" ? 7 / Math.max(size.y, 0.001) : 2 / Math.max(size.x, size.y, size.z, 0.001);
+  const target = { tree: 7, bush: 1, tyre: 1.05, barn: 6 }[mode];
+  const scale = target != null ? target / Math.max(size.y, 0.001) : 2 / Math.max(size.x, size.y, size.z, 0.001);
   const m = new THREE.Matrix4().makeScale(scale, scale, scale).multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2));
   for (const p of parts) p.geo.applyMatrix4(m);
 }

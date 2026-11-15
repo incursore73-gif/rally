@@ -52,7 +52,7 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
   const rnd = mulberry32(cfg.seed * 31 + 7), nz = makeNoise(cfg.seed + 99), g = new THREE.Group(), F = terrain.fineRect, hAt = terrain.heightAt, d = new THREE.Object3D(), col = new THREE.Color(), minD = cfg.veg.minRoadDist, cols = [], th = cfg.themeDef, VT = th.veg, sea = terrain.seaY, treeLine = road.maxY + 70;
   const NAT = window.ALPINE && window.ALPINE.natura;
   const useGLB = !!(NAT && !preset.lambert && (NAT.trees.length || NAT.rocks.length));
-  function collectTrees(count, region, far, spots) {
+  function collectTrees(count, region, far, spots, noCol) {
     for (let a = 0; a < count * 14 && spots.length < count; a++) {
       const x = region.x0 + rnd() * (region.x1 - region.x0), z = region.z0 + rnd() * (region.z1 - region.z0);
       if (!far && !(x > F.x0 && x < F.x1 && z > F.z0 && z < F.z1)) continue;
@@ -69,7 +69,7 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
         if (terrain.slopeAt(x, z) > 0.7) continue;
       } else if (Math.hypot(terrain.natural(x + 4, z) - terrain.natural(x - 4, z), terrain.natural(x, z + 4) - terrain.natural(x, z - 4)) / 8 > 0.9) continue;
       const s = 0.75 + rnd() * 1.05;
-      if (!far) {
+      if (!far && !noCol) {
         const q2 = road.nearest(x, z, 24);
         if (q2) cols.push({ x, z, r: 0.45 + 0.3 * s, rock: false });
       }
@@ -120,6 +120,49 @@ export function buildVegetation(cfg, preset, terrain, road, M) {
   const spotsF = [];
   collectTrees(Math.round(preset.trees.far * Math.min(1, VT.density)), { x0: -1800, x1: 1800, z0: -2400, z1: 700 }, true, spotsF);
   const nFar = fill(new THREE.InstancedMesh(treeFar(VT.type), M.tree, Math.max(1, spotsF.length)), spotsF, hslTint, false);
+  // --- cespugli: varianti GLB sparsi vicino alla strada (senza collisione) ---
+  const BUSH = (useGLB && NAT.bushes) || [];
+  if (useGLB && BUSH.length) {
+    const spotsB = [];
+    collectTrees(Math.round(preset.trees.near * 0.28 * VT.density), F, false, spotsB, true);
+    const n = BUSH.length, buckets = [];
+    for (let i = 0; i < n; i++) buckets.push([]);
+    spotsB.forEach((sp) => buckets[Math.floor(rnd() * n)].push(sp));
+    buckets.forEach((b, vi) => {
+      if (!b.length) return;
+      const v = BUSH[vi];
+      for (const p of v.parts) fill(new THREE.InstancedMesh(p.geo.clone(), p.mat, b.length), b, (sp, c) => c.setScalar(0.8 + rnd() * 0.35), true);
+    });
+  }
+  // --- cataste di gomme nei tornanti (con collisione) ---
+  const tyre = useGLB && ((NAT.props || []).find((p) => p.kind === "tyre"));
+  if (tyre) {
+    const spotsG = [], hp = road.hairpins || [];
+    for (const h of hp) {
+      const side = -h.side, o = road.hw + road.shoulder + 1.35;
+      for (let k = -2; k <= 2; k += 2) {
+        const i = Math.min(road.N - 1, Math.max(0, h.index + k * 2)), x = road.X[i] + road.NX[i] * side * o, z = road.Z[i] + road.NZ[i] * side * o, y = hAt(x, z);
+        spotsG.push({ x, y: y - 0.05, z, rx: 0, ry: rnd() * 6.28, rz: 0, sx: 0.9 + rnd() * 0.25, sy: 0.9 + rnd() * 0.25, sz: 0.9 + rnd() * 0.25 });
+        cols.push({ x, z, r: 0.8, rock: true });
+      }
+    }
+    for (const p of tyre.parts) fill(new THREE.InstancedMesh(p.geo.clone(), p.mat, Math.max(1, spotsG.length)), spotsG, (sp, c) => c.setScalar(0.9 + rnd() * 0.2), true);
+  }
+  // --- fienile: 2-3 copie nel paesaggio, lontane dalla pista (con collisione) ---
+  const barn = useGLB && ((NAT.props || []).find((p) => p.kind === "barn"));
+  if (barn) {
+    const spotsBarn = [];
+    for (let a = 0; a < 80 && spotsBarn.length < 2 + Math.floor(rnd() * 2); a++) {
+      const x = F.x0 + rnd() * (F.x1 - F.x0), z = F.z0 + rnd() * (F.z1 - F.z0), y = hAt(x, z);
+      if (sea != null && y < sea + 2.5) continue;
+      if (terrain.slopeAt(x, z) > 0.35) continue;
+      const q = road.nearest(x, z, 260);
+      if (!q || q.d < 45) continue;
+      spotsBarn.push({ x, y: y - 0.1, z, rx: 0, ry: rnd() * 6.28, rz: 0, sx: 1, sy: 1, sz: 1 });
+      cols.push({ x, z, r: 3.5, rock: true });
+    }
+    for (const p of barn.parts) fill(new THREE.InstancedMesh(p.geo.clone(), p.mat, Math.max(1, spotsBarn.length)), spotsBarn, (sp, c) => c.setScalar(0.95 + rnd() * 0.1), true);
+  }
   // --- rocce: vicine da natura.glb (se disponibile), lontane procedurali ---
   const spotsRN = [], spotsRF = [];
   for (let a = 0; a < preset.rocks * 30 && spotsRN.length + spotsRF.length < preset.rocks; a++) {

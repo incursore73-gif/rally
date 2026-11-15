@@ -296,11 +296,15 @@ export function buildFurniture(R, heightAt, M, cfg) {
       let j = i;
       while (j < N && flag[j]) j++;
       if (j - i >= 6) {
-        const pts = [];
-        for (let k = i; k < j; k++) pts.push(new THREE.Vector3(R.X[k] + R.NX[k] * side * off, R.Y[k] + 0.5, R.Z[k] + R.NZ[k] * side * off));
-        segs.push({ side, points: pts });
+        const pts = [], nx2 = [], nz2 = [];
+        for (let k = i; k < j; k++) {
+          pts.push(new THREE.Vector3(R.X[k] + R.NX[k] * side * off, R.Y[k] + 0.5, R.Z[k] + R.NZ[k] * side * off));
+          nx2.push(R.NX[k] * side);
+          nz2.push(R.NZ[k] * side);
+        }
+        segs.push({ side, points: pts, nx: nx2, nz: nz2 });
         const step = Math.round(rl.postSpacing / ds);
-        for (let k = i; k < j; k += step) postM.push([R.X[k] + R.NX[k] * side * (off + 0.15), R.Y[k] + 0.45, R.Z[k] + R.NZ[k] * side * (off + 0.15)]);
+        for (let k = i; k < j; k += step) postM.push([R.X[k] + R.NX[k] * side * (off + 0.15), R.Y[k] + 0.34, R.Z[k] + R.NZ[k] * side * (off + 0.15)]);
       }
       i = j;
     }
@@ -316,17 +320,23 @@ export function buildFurniture(R, heightAt, M, cfg) {
   }
   const rg = new THREE.BufferGeometry();
   {
+    // profilo W-beam: [dy dal centro, spostamento verso l'esterno] dall'alto al basso
+    const prof = [[0.66, 0.035], [0.575, -0.04], [0.5, 0.05], [0.425, -0.04], [0.34, 0.035]], pr = prof.length;
     const P = [], I = [];
     let b = 0;
     for (const s of segs) {
-      for (let k = 0; k < s.points.length; k++) {
-        const p = s.points[k];
-        P.push(p.x, p.y, p.z, p.x, p.y + 0.32, p.z);
-        if (k < s.points.length - 1) {
-          I.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+      const L2 = s.points.length;
+      for (let k = 0; k < L2; k++) {
+        const p = s.points[k], ox = s.nx[k], oz = s.nz[k];
+        for (let j = 0; j < pr; j++) {
+          P.push(p.x + ox * prof[j][1], p.y - 0.5 + prof[j][0], p.z + oz * prof[j][1]);
         }
-        b += 2;
       }
+      for (let k = 0; k < L2 - 1; k++) for (let j = 0; j < pr - 1; j++) {
+        const a0 = b + k * pr + j, a1 = a0 + 1, a2 = a0 + pr, a3 = a2 + 1;
+        I.push(a0, a2, a1, a1, a2, a3);
+      }
+      b += L2 * pr;
     }
     rg.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
     rg.setIndex(I);
@@ -347,7 +357,7 @@ export function buildFurniture(R, heightAt, M, cfg) {
     m.receiveShadow = true;
     g.add(m);
   };
-  inst(new THREE.BoxGeometry(0.1, 0.9, 0.1), M.post, postM);
+  inst(new THREE.BoxGeometry(0.14, 0.68, 0.14), M.post, postM);
   inst(new THREE.BoxGeometry(0.09, 0.9, 0.09), M.delin, delM);
   inst(new THREE.BoxGeometry(3, 0.8, 0.55), M.wall, wallM, true);
   for (const h of R.hairpins) {
@@ -357,5 +367,60 @@ export function buildFurniture(R, heightAt, M, cfg) {
     }
   }
   inst(new THREE.BoxGeometry(1, 0.7, 0.05), M.sign, chevM, true);
+  // --- archi di partenza/arrivo ---
+  const bannerTex = (text) => {
+    const c = document.createElement("canvas");
+    c.width = 1024;
+    c.height = 192;
+    const x = c.getContext("2d");
+    x.fillStyle = "#c81e12";
+    x.fillRect(0, 0, 1024, 192);
+    const sq = 24;
+    x.fillStyle = "#ffffff";
+    for (let i = 0; i < 22; i++) {
+      if (i % 2 === 0) {
+        x.fillRect(i * sq * 2, 0, sq, sq);
+        x.fillRect(i * sq * 2 + sq, sq, sq, sq);
+        x.fillRect(i * sq * 2, 192 - sq, sq, sq);
+        x.fillRect(i * sq * 2 + sq, 192 - sq * 2, sq, sq);
+      }
+    }
+    x.fillStyle = "#ffffff";
+    x.font = "800 108px 'Barlow Condensed', Arial, sans-serif";
+    x.textAlign = "center";
+    x.textBaseline = "middle";
+    x.fillText(text, 512, 98);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  };
+  try {
+    const arch = (idx, text) => {
+      const i = Math.min(N - 1, Math.max(0, idx)), cx = R.X[i], cy = R.Y[i], cz = R.Z[i], a = Math.atan2(-R.TZ[i], -R.TX[i]);
+      const w = hw + sh + 0.45, nx = R.NX[i], nz = R.NZ[i], H = 5;
+      const pg = new THREE.BoxGeometry(0.28, H, 0.28);
+      for (const s2 of [-1, 1]) {
+        const p = new THREE.Mesh(pg, M.post);
+        p.position.set(cx + nx * s2 * w, cy + H / 2 - 0.1, cz + nz * s2 * w);
+        p.castShadow = false;
+        g.add(p);
+      }
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(w * 2, 0.4, 0.45), M.post);
+      beam.position.set(cx, cy + H + 0.1, cz);
+      beam.rotation.y = a;
+      beam.castShadow = false;
+      g.add(beam);
+      const bp = new THREE.Mesh(new THREE.PlaneGeometry(w * 2 - 0.3, 1.2), new THREE.MeshStandardMaterial({ map: bannerTex(text), roughness: 0.85 }));
+      bp.position.set(cx, cy + H - 0.7, cz);
+      bp.rotation.y = a;
+      const bb = new THREE.Mesh(new THREE.PlaneGeometry(w * 2 - 0.3, 1.2), new THREE.MeshStandardMaterial({ color: 16106642, roughness: 0.9 }));
+      bb.position.set(cx, cy + H - 0.7, cz);
+      bb.rotation.y = a + Math.PI;
+      g.add(bp, bb);
+    };
+    arch(3, "PARTENZA");
+    arch(N - 4, "ARRIVO");
+  } catch (e) {}
   return { group: g, guardrails: segs, flags: { left: FL[-1], right: FL[1] }, landmarks: R.hairpins.map((h) => ({ type: "hairpin", position: h.position, s: h.s, radius: h.radius })) };
 }
