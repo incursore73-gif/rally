@@ -270,6 +270,15 @@ export function buildRoadMeshes(R, M) {
     add(strip(R, -hw + 0.24, -hw + 0.38, 0.02, 6), M.line, false);
     add(strip(R, -0.07, 0.07, 0.02, 6, (i) => Math.floor(R.S[i] / 5) % 2 === 0), M.line, false);
   }
+  // segni di gomma permanenti nelle curve (traiettoria "piazzata"): dove la curvatura è alta
+  const curv = new Float32Array(R.N);
+  for (let i = 0; i < R.N; i++) {
+    const j = Math.min(R.N - 1, i + 4), k2 = Math.max(0, i - 4);
+    curv[i] = Math.abs(Math.atan2(R.TZ[j] * R.TX[k2] - R.TX[j] * R.TZ[k2], R.TX[j] * R.TX[k2] + R.TZ[j] * R.TZ[k2]));
+  }
+  const skMask = (i) => curv[i] > 0.2 || (i < R.N - 1 && curv[i + 1] > 0.2);
+  add(strip(R, hw * 0.28, hw * 0.46, 0.02, 6, skMask, 2), M.skid).renderOrder = 2;
+  add(strip(R, -hw * 0.46, -hw * 0.28, 0.02, 6, skMask, 2), M.skid).renderOrder = 2;
   return g;
 }
 export function buildFurniture(R, heightAt, M, cfg) {
@@ -311,7 +320,7 @@ export function buildFurniture(R, heightAt, M, cfg) {
     for (let i = 0; i < N; i += 10) {
       if (flag[i]) continue;
       const o = hw + sh + 0.3;
-      delM.push([R.X[i] + R.NX[i] * side * o, R.Y[i] + 0.45, R.Z[i] + R.NZ[i] * side * o]);
+      delM.push([R.X[i] + R.NX[i] * side * o, R.Y[i] + 0.575, R.Z[i] + R.NZ[i] * side * o]);
     }
     for (let i = 0; i < N; i += 2) {
       const o = hw + sh + 0.3, up = heightAt(R.X[i] + R.NX[i] * side * (o + 2), R.Z[i] + R.NZ[i] * side * (o + 2)) - R.Y[i];
@@ -358,7 +367,9 @@ export function buildFurniture(R, heightAt, M, cfg) {
     g.add(m);
   };
   inst(new THREE.BoxGeometry(0.14, 0.68, 0.14), M.post, postM);
-  inst(new THREE.BoxGeometry(0.09, 0.9, 0.09), M.delin, delM);
+  // pali della neve: palo bianco + banda arancione riflettente in cima
+  inst(new THREE.BoxGeometry(0.07, 1.15, 0.07), M.snow, delM);
+  inst(new THREE.BoxGeometry(0.078, 0.24, 0.078), M.snowband, delM.map((p) => [p[0], p[1] + 0.455, p[2]]));
   inst(new THREE.BoxGeometry(3, 0.8, 0.55), M.wall, wallM, true);
   for (const h of R.hairpins) {
     for (let k = -3; k <= 3; k++) {
@@ -397,8 +408,14 @@ export function buildFurniture(R, heightAt, M, cfg) {
   };
   try {
     const arch = (idx, text) => {
-      const i = Math.min(N - 1, Math.max(0, idx)), cx = R.X[i], cy = R.Y[i], cz = R.Z[i], a = Math.atan2(-R.TZ[i], -R.TX[i]);
-      const w = hw + sh + 0.45, nx = R.NX[i], nz = R.NZ[i], H = 5;
+      const i = Math.min(N - 1, Math.max(0, idx));
+      // tangente mediata su ±10 campioni: l'arco resta perpendicolare alla strada anche dove curva
+      let tx = 0, tz = 0;
+      for (let k = Math.max(0, i - 10); k <= Math.min(N - 1, i + 10); k++) { tx += R.TX[k]; tz += R.TZ[k]; }
+      const L3 = Math.hypot(tx, tz) || 1;
+      tx /= L3;
+      tz /= L3;
+      const cx = R.X[i], cy = R.Y[i], cz = R.Z[i], a = Math.atan2(-tx, -tz), nx = -tz, nz = tx, w = hw + sh + 0.45, H = 5;
       const pg = new THREE.BoxGeometry(0.28, H, 0.28);
       for (const s2 of [-1, 1]) {
         const p = new THREE.Mesh(pg, M.post);

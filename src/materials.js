@@ -222,7 +222,10 @@ export function createMaterials(preset, ext = {}, surface = "asphalt") {
     post: mk({ color: 9080468 }, 0.6, 0.4),
     wall: mk({ color: 9341570, flatShading: true }, 1),
     sign: mk({ color: 15909376 }, 0.6),
-    delin: mk({ color: 16053488 }, 0.7)
+    delin: mk({ color: 16053488 }, 0.7),
+    snow: mk({ color: 15921906 }, 0.7),
+    snowband: mk({ color: 16738842 }, 0.55),
+    skid: mk({ color: 1118481, transparent: true, opacity: 0.42, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }, 0.55)
   };
   if (macroTex) {
     const macro = (mat) => {
