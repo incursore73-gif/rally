@@ -282,12 +282,12 @@ document.addEventListener("visibilitychange",()=>{document.hidden?bgm.pause():(b
 let state="menu",lvl=0,S=null,me=null,cd=0,goT=0,raceT=0,msgT=0,rally=null,Z=1,camH=0;
 let rec=[],recT=0,ghost=null,bestG=null,gi=0,gd=0,gpos=null,sec=null,secLog=[],finD=[0,0],falls=0;
 let spray=[],skids=[],spl=[],lastSk=null,tex=null,inCrowd=false;
-const input={thr:0,brk:0,hb:0},keys={};const gcCache=new WeakMap();
+const input={thr:0,brk:0,hb:0},keys={};let wheelId=null,wheelVal=0;const gcCache=new WeakMap();
 function loadGhost(i){try{const s=localStorage.getItem("gp_rly3_g"+i);return s?JSON.parse(s):null}catch(e){return null}}
 function storeGhost(g){try{localStorage.setItem("gp_rly3_g"+lvl,JSON.stringify(g))}catch(e){}}
 function newSec(){return{i:0,cum:[null,null,null],t:[null,null,null],cmp:[null,null,null],col:["","",""],flash:0}}
 function startLevel(i){
- initAudio();bgmStop();tmapClear();calibrateSensor();if(sensorMode()&&!SENS.on)enableSensors(true);lvl=i;S=buildStage(ST[i]);{const ln=Math.round(S.N*DS*U);save.len=save.len||{};if(save.len[i]!==ln){save.len[i]=ln;persist()}}
+ initAudio();bgmStop();tmapClear();applySteerMode();calibrateSensor();if(sensorMode()&&!SENS.on)enableSensors(true);lvl=i;S=buildStage(ST[i]);{const ln=Math.round(S.N*DS*U);save.len=save.len||{};if(save.len[i]!==ln){save.len[i]=ln;persist()}}
  const p=S.P[2];
  me={x:p.x,y:p.y,h:p.h,vf:0,vl:0,st:0,slip:0,br:0,gl:0,px:p.x,py:p.y,idx:2,pidx:2,lat:0,air:null,wet:false,gear:1,rev:0,pw:1,shiftT:0,hbT:0};
  finD=[S.total/3,S.total*2/3];camH=p.h;
@@ -350,8 +350,13 @@ $("#rst").onclick=()=>{uiSnd("ui");const b=$("#rst");
 const tmap=new Map();let mouseDown=false;
 const inR=(r,p,m)=>p.x>=r.left-m&&p.x<=r.right+m&&p.y>=r.top-m&&p.y<=r.bottom+m;
 function recompute(){
- let t=0,h=0;const rh=$("#hb").getBoundingClientRect();
- for(const p of tmap.values()){if(inR(rh,p,12)||p.x>W*.5)h=1;else t=1}
+ let t=0,h=0,st=null;const rh=$("#hb").getBoundingClientRect(),rw=$("#wheel").getBoundingClientRect();
+ for(const p of tmap.values()){
+  if(inR(rh,p,12))h=1;
+  else if(wheelMode()&&p.x>W*.5)st=Math.max(-1,Math.min(1,(p.x-(rw.left+rw.width/2))/(SET.steer||90)));
+  else if(p.x<W*.5)t=1;
+  else if(!wheelMode())h=1}
+ wheelId=st===null?null:1;wheelVal=st===null?0:st;
  input.thr=t;input.brk=0;input.hb=h;
  $("#gas").classList.toggle("on",!!t);$("#hb").classList.toggle("on",!!h)}
 function tmapClear(){tmap.clear();recompute()}
@@ -367,6 +372,7 @@ document.addEventListener("contextmenu",e=>e.preventDefault());
 const SENS={on:false,base:null,tilt:0,twist:0,heading:null,raw:0,err:null,last:0,val:0};
 const wrapDeg=d=>{while(d>180)d-=360;while(d<-180)d+=360;return d};
 const sensorMode=()=>SET.control==="sensor"||SET.control==="twist";
+const wheelMode=()=>SET.control==="wheel";
 function screenAngle(){const a=(screen.orientation&&typeof screen.orientation.angle==="number")?screen.orientation.angle:(typeof window.orientation==="number"?window.orientation:0);return((a%360)+360)%360}
 function tiltAxis(e){const a=screenAngle(),b=Number(e.beta)||0,g=Number(e.gamma)||0;if(a===90)return-b;if(a===270)return b;return g}
 function calibrateSensor(){SENS.base=null;SENS.tilt=0;SENS.twist=0;SENS.heading=null;SENS.val=0}
@@ -432,7 +438,7 @@ function step(dt){
  const racing=state==="race";if(racing)raceT+=dt;
  const inp={thr:racing&&(input.thr||keys.ArrowUp||keys.KeyW),brk:0,hb:racing&&(input.hb||keys.Space)};
  const sen=getSensorSteer();
- const sT=sen===null?0:sen;
+ const sT=sen!==null?sen:(wheelId!==null?wheelVal:0);
  me.st+=(sT-me.st)*Math.min(1,dt*14);
  const ak=Math.abs(me.lat),hw=S.hw;
  me.wet=S.F.some(f=>me.idx>=f[0]&&me.idx<=f[1])&&ak<hw+30;
@@ -658,26 +664,27 @@ function adapt(dt){adA+=dt;adN++;if(adA>1.2){const m=adA/adN;adA=0;adN=0;if(m>.0
  if(state==="race"&&!adAuto&&adPR<=.71&&m>.034)adLow++;else if(m<.03)adLow=0;
  if(adLow>=4&&!adAuto){adAuto=true;SET.shadows=false;SET.quality="perf";try{if(ENVI)ENVI.setShadows(false)}catch(e){}flashMsg("QUALITÀ RIDOTTA PER FLUIDITÀ","gm")}}}
 /* --- impostazioni, copilota, meteo, musica --- */
-let SET=Object.assign({fps:false,voice:true,music:true,shadows:true,weather:"auto",time:"auto",quality:"high",bright:1,control:"sensor",sensorRange:28,invSensor:false},(()=>{try{return JSON.parse(localStorage.getItem("rally3dset")||"{}")}catch(e){return{}}})());
-if(SET.control!=="sensor"&&SET.control!=="twist")SET.control="sensor";
+let SET=Object.assign({fps:false,voice:true,music:true,shadows:true,weather:"auto",time:"auto",quality:"high",bright:1,steer:90,control:"sensor",sensorRange:28,invSensor:false},(()=>{try{return JSON.parse(localStorage.getItem("rally3dset")||"{}")}catch(e){return{}}})());
+if(SET.control!=="sensor"&&SET.control!=="twist"&&SET.control!=="wheel")SET.control="sensor";
+const applySteerMode=()=>{try{document.documentElement.dataset.steer=SET.control==="wheel"?"wheel":"sensor"}catch(e){}};applySteerMode();
 const saveSet=()=>{try{localStorage.setItem("rally3dset",JSON.stringify(SET))}catch(e){}};
 let RAIN=false,rainP=null,copS=null,copI=0,copL=[],noteEl=null;
 {const b=document.getElementById("cfg");
  const p=document.createElement("div");p.id="cfgp";
  p.innerHTML='<div class="sw"><div class="sh"><span class="stt">Impostazioni</span><label class="fpsl"><span>Mostra FPS</span><input type="checkbox" id="s_fps"></label><button id="s_ok" class="btn go">Chiudi</button></div><div class="sg">'
  +'<section><h3>Audio</h3><label><span>Audio generale</span><input type="checkbox" id="s_snd"></label><label><span>Copilota (voce)</span><input type="checkbox" id="s_voice"></label><label><span>Musica</span><input type="checkbox" id="s_music"></label></section>'
- +'<section><h3>Guida</h3><label><span>Vista</span><select id="s_cam"><option value="0">Inseguimento</option><option value="1">Cofano</option><option value="2">Paraurti</option></select></label><label><span>Modalità sterzo</span><select id="s_control"><option value="sensor">Sensore · inclina</option><option value="twist">Sensore · ruota</option></select></label><label class="rg"><span>Corsa sensore</span><input type="range" id="s_srange" min="12" max="60" step="2"></label><label><span>Inverti sensore</span><input type="checkbox" id="s_invs"></label><button id="s_sensor" class="btn g">📱 Attiva sensori</button><small id="s_sensorst"></small><label><span>Cofano visibile</span><select id="s_hood"><option value="0">Bassa</option><option value="1">Media</option><option value="2">Alta</option></select></label><button id="s_fs" class="btn g">⛶ Schermo intero</button></section>'
+ +'<section><h3>Guida</h3><label><span>Vista</span><select id="s_cam"><option value="0">Inseguimento</option><option value="1">Cofano</option><option value="2">Paraurti</option></select></label><label><span>Modalità guida</span><select id="s_control"><option value="sensor">Sensori · inclina</option><option value="twist">Sensori · ruota</option><option value="wheel">Volante touch</option></select></label><label class="rg sensor-only"><span>Corsa sensore</span><input type="range" id="s_srange" min="12" max="60" step="2"></label><label class="sensor-only"><span>Inverti sensore</span><input type="checkbox" id="s_invs"></label><button id="s_sensor" class="btn g sensor-only">📱 Attiva sensori</button><small id="s_sensorst" class="sensor-only"></small><label class="rg wheel-only"><span>Sensibilità volante</span><input type="range" id="s_steer" min="60" max="150" step="5"></label><label><span>Cofano visibile</span><select id="s_hood"><option value="0">Bassa</option><option value="1">Media</option><option value="2">Alta</option></select></label><button id="s_fs" class="btn g">⛶ Schermo intero</button></section>'
  +'<section><h3>Grafica</h3><label><span>Qualità</span><select id="s_q"><option value="high">Alta</option><option value="perf">Prestazioni</option></select></label><label><span>Ombre</span><input type="checkbox" id="s_shadows"></label><label class="rg"><span>Luminosità</span><input type="range" id="s_b" min="0.7" max="2" step="0.05"></label></section>'
  +'<section><h3>Ambiente</h3><label><span>Meteo</span><select id="s_weather"><option value="auto">Automatico</option><option value="clear">Sereno</option><option value="rain">Pioggia</option></select></label><label><span>Ora</span><select id="s_time"><option value="auto">Automatica</option><option value="day">Giorno</option><option value="dusk">Tramonto</option><option value="night">Notte</option></select></label><small>Meteo e ora si applicano alla prossima prova.</small></section>'
  +'</div></div>';
  document.body.appendChild(p);const g=id=>p.querySelector("#"+id);
- const sync=()=>{g("s_snd").checked=!muted;g("s_fps").checked=!!SET.fps;g("s_voice").checked=SET.voice;g("s_music").checked=SET.music;g("s_shadows").checked=SET.shadows;g("s_weather").value=SET.weather;g("s_time").value=SET.time;g("s_control").value=SET.control||"sensor";g("s_srange").value=SET.sensorRange||28;g("s_invs").checked=!!SET.invSensor;g("s_q").value=SET.quality;g("s_b").value=SET.bright;g("s_cam").value=String((SET.cam|0)%3);g("s_hood").value=String(cl3(SET.hoodVis|0,0,2));updateSensorUI()};
+ const sync=()=>{applySteerMode();g("s_snd").checked=!muted;g("s_fps").checked=!!SET.fps;g("s_voice").checked=SET.voice;g("s_music").checked=SET.music;g("s_shadows").checked=SET.shadows;g("s_weather").value=SET.weather;g("s_time").value=SET.time;g("s_control").value=SET.control||"sensor";g("s_srange").value=SET.sensorRange||28;g("s_steer").value=SET.steer||90;g("s_invs").checked=!!SET.invSensor;g("s_q").value=SET.quality;g("s_b").value=SET.bright;g("s_cam").value=String((SET.cam|0)%3);g("s_hood").value=String(cl3(SET.hoodVis|0,0,2));updateSensorUI()};
  b.onclick=()=>{uiSnd("ui");sync();p.style.display="flex"};
  g("s_ok").onclick=()=>{uiSnd("ui");p.style.display="none"};
  g("s_fs").onclick=()=>{uiSnd("ui");$("#fs").click()};
   g("s_sensor").onclick=()=>{uiSnd("ui");enableSensors(false)};
- p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value;if(e.target.id==="s_srange")SET.sensorRange=+e.target.value};
- p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;const oldC=SET.control;SET.control=g("s_control").value||"sensor";SET.sensorRange=+g("s_srange").value||28;SET.invSensor=g("s_invs").checked;if(SET.control!==oldC)calibrateSensor();if(sensorMode()&&!SENS.on)enableSensors(true);SET.quality=g("s_q").value;saveSet();updateSensorUI();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
+ p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value;if(e.target.id==="s_srange")SET.sensorRange=+e.target.value;if(e.target.id==="s_steer")SET.steer=+e.target.value};
+ p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;const oldC=SET.control;SET.control=g("s_control").value||"sensor";SET.steer=+g("s_steer").value||90;SET.sensorRange=+g("s_srange").value||28;SET.invSensor=g("s_invs").checked;if(SET.control!==oldC){calibrateSensor();wheelId=null;wheelVal=0;applySteerMode()}if(sensorMode()&&!SENS.on)enableSensors(true);SET.quality=g("s_q").value;saveSet();updateSensorUI();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
 const GR={hair:["tornante",1],vh:["uno",1],c90:["due",2],sweep:["quattro, largo",4],kink:["cinque, leggera",5],chic:["doppia, tre",3]};
 function noteInfo(n){const P=S.P,a=i=>Math.atan2(P[i].ny,P[i].nx),m=Math.min(S.N-1,Math.max(n.i0+1,Math.round((n.i0+n.i1)/2)));let d=a(m)-a(n.i0);d=Math.atan2(Math.sin(d),Math.cos(d));return{right:d>0}}
 function say(t){if(!SET.voice||!window.speechSynthesis||muted)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";u.rate=1.15;u.volume=1;u.pitch=1;speechSynthesis.speak(u)}catch(e){}}
@@ -762,7 +769,8 @@ function draw(){draw3d();
  $("#spd").textContent=Math.round(Math.max(0,me.vf)*.5)+" km/h · M"+me.gear;
  const rb=$("#rev");rb.style.width=(rv*100)+"%";rb.style.background="hsl("+(120-rv*120)+",85%,55%)";
  
- /* minimap: sezione di tracciato intorno all'auto */
+ if(wheelMode()){const wel=$("#wheel");if(wel)wel.style.transform="rotate("+(me.st*100)+"deg)"}
+  /* minimap: sezione di tracciato intorno all'auto */
  {const m=mmC,HS=1500,k=320/(2*HS),X=x=>(x-me.x)*k+160,Y=y=>(y-me.y)*k+160;
   m.clearRect(0,0,320,320);m.lineJoin="round";m.lineCap="round";
   const i0=Math.max(0,me.idx-60),i1=Math.min(S.N-1,me.idx+150);
