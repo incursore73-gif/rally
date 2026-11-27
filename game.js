@@ -351,7 +351,7 @@ const tmap=new Map();let mouseDown=false;
 const inR=(r,p,m)=>p.x>=r.left-m&&p.x<=r.right+m&&p.y>=r.top-m&&p.y<=r.bottom+m;
 function recompute(){
  let t=0,h=0;const rh=$("#hb").getBoundingClientRect();
- for(const p of tmap.values()){if(inR(rh,p,12))h=1;else if(p.x<W*.4)t=1}
+ for(const p of tmap.values()){if(inR(rh,p,12)||p.x>W*.5)h=1;else t=1}
  input.thr=t;input.brk=0;input.hb=h;
  $("#gas").classList.toggle("on",!!t);$("#hb").classList.toggle("on",!!h)}
 function tmapClear(){tmap.clear();recompute()}
