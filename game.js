@@ -354,8 +354,7 @@ function recompute(){
  for(const p of tmap.values()){
   if(inR(rh,p,12))h=1;
   else if(wheelMode()&&p.x>W*.5)st=Math.max(-1,Math.min(1,(p.x-(rw.left+rw.width/2))/(SET.steer||90)));
-  else if(p.x<W*.5)t=1;
-  else if(!wheelMode())h=1}
+  else if(p.x<W*.5)t=1}
  wheelId=st===null?null:1;wheelVal=st===null?0:st;
  input.thr=t;input.brk=0;input.hb=h;
  $("#gas").classList.toggle("on",!!t);$("#hb").classList.toggle("on",!!h)}
