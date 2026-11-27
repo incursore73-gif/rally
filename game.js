@@ -381,7 +381,7 @@ function getSensorSteer(){
  if(!sensorMode()||!SENS.on)return null;
  const range=Math.max(8,Number(SET.sensorRange)||28);
  const v=SET.control==="twist"?SENS.twist/(range*3):SENS.tilt/range;
- const c=Math.max(-1,Math.min(1,v));SENS.val=SET.invSensor?-c:c;return SENS.val;
+ const c=Math.max(-1,Math.min(1,v));SENS.val=SET.invSensor?c:-c;return SENS.val;
 }
 async function enableSensors(quiet){
  const DOE=window.DeviceOrientationEvent;

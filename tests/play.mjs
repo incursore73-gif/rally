@@ -15,7 +15,7 @@ const pilot=(k,maxF=26000)=>{T.startLevel(k);T.SENS.on=true;T.SET.control='senso
   while(T.state!=='done'&&n<maxF){const q=T.me,i=Math.min(q.idx+10,S.N-1),p=S.P[i],w=Math.atan2(p.y-q.y,p.x-q.x),e=Math.atan2(Math.sin(w-q.h),Math.cos(w-q.h)),sp=Math.hypot(q.vf,q.vl);
     // limita la velocità in curva (autopilota prudente)
     const nxt=S.notes.find(nn=>nn.i1>q.idx&&nn.i0-q.idx<60),vmax=nxt&&(nxt.t==='hair'||nxt.t==='vh')?190:nxt&&nxt.t==='c90'?300:520;
-    T.SENS.tilt=Math.max(-1,Math.min(1,e/.6))*T.SET.sensorRange;T.keys.KeyW=sp<vmax?1:0;T.keys.Space=Math.abs(e)>.6&&sp>260?1:0;frame();n++;if(Math.abs(q.lat)>S.hw)off++;if(q.air)air=true}
+    T.SENS.tilt=-Math.max(-1,Math.min(1,e/.6))*T.SET.sensorRange;T.keys.KeyW=sp<vmax?1:0;T.keys.Space=Math.abs(e)>.6&&sp>260?1:0;frame();n++;if(Math.abs(q.lat)>S.hw)off++;if(q.air)air=true}
   return{state:T.state,time:T.raceT,frames:n,off,air,dmg:T.dmg,N:S.N,notes:S.notes.length,hair:S.notes.filter(x=>x.t==='hair').length,J:S.J.length,tr:S.tr.length,srf:T.ST[k].srf}};
 for(const k of[0,1,3,5,9]){const r=pilot(k);console.log('lvl',k,JSON.stringify(r));ck('prova '+k+' completata',r.state==='done');ck('prova '+k+' ha tornanti e note',r.hair>=1&&r.notes>=8);if(r.srf==='gravel')ck('prova '+k+' salti (sterrato)',r.J>=1,`(${r.J})`)}
 // guardrail: spingi l'auto contro un tratto protetto e verifica che venga respinta
