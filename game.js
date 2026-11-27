@@ -287,7 +287,7 @@ function loadGhost(i){try{const s=localStorage.getItem("gp_rly3_g"+i);return s?J
 function storeGhost(g){try{localStorage.setItem("gp_rly3_g"+lvl,JSON.stringify(g))}catch(e){}}
 function newSec(){return{i:0,cum:[null,null,null],t:[null,null,null],cmp:[null,null,null],col:["","",""],flash:0}}
 function startLevel(i){
- initAudio();bgmStop();tmapClear();lvl=i;S=buildStage(ST[i]);{const ln=Math.round(S.N*DS*U);save.len=save.len||{};if(save.len[i]!==ln){save.len[i]=ln;persist()}}
+ initAudio();bgmStop();tmapClear();calibrateSensor();if(sensorMode()&&!SENS.on)enableSensors(true);lvl=i;S=buildStage(ST[i]);{const ln=Math.round(S.N*DS*U);save.len=save.len||{};if(save.len[i]!==ln){save.len[i]=ln;persist()}}
  const p=S.P[2];
  me={x:p.x,y:p.y,h:p.h,vf:0,vl:0,st:0,slip:0,br:0,gl:0,px:p.x,py:p.y,idx:2,pidx:2,lat:0,air:null,wet:false,gear:1,rev:0,pw:1,shiftT:0,hbT:0};
  finD=[S.total/3,S.total*2/3];camH=p.h;
@@ -366,6 +366,42 @@ addEventListener("mouseup",()=>{mouseDown=false;tmap.delete("m");recompute()});
 addEventListener("keydown",e=>keys[e.code]=1);addEventListener("keyup",e=>keys[e.code]=0);
 document.addEventListener("contextmenu",e=>e.preventDefault());
 
+/* ---------- phone sensors: sterzo come volante ---------- */
+const SENS={on:false,base:null,tilt:0,twist:0,heading:null,raw:0,err:null,last:0,val:0};
+const wrapDeg=d=>{while(d>180)d-=360;while(d<-180)d+=360;return d};
+const sensorMode=()=>SET.control==="sensor"||SET.control==="twist";
+function screenAngle(){const a=(screen.orientation&&typeof screen.orientation.angle==="number")?screen.orientation.angle:(typeof window.orientation==="number"?window.orientation:0);return((a%360)+360)%360}
+function tiltAxis(e){const a=screenAngle(),b=Number(e.beta)||0,g=Number(e.gamma)||0;if(a===90)return-b;if(a===270)return b;return g}
+function calibrateSensor(){SENS.base=null;SENS.tilt=0;SENS.twist=0;SENS.heading=null;SENS.val=0}
+function onOrientation(e){
+ if(e.beta==null&&e.gamma==null&&e.alpha==null&&e.webkitCompassHeading==null)return;
+ const ax=tiltAxis(e);if(SENS.base==null)SENS.base=ax;SENS.tilt=ax-SENS.base;
+ const h=e.webkitCompassHeading!=null?Number(e.webkitCompassHeading):(e.alpha!=null?360-Number(e.alpha):null);
+ if(Number.isFinite(h)){if(SENS.heading==null)SENS.heading=h;else{SENS.twist+=wrapDeg(h-SENS.heading);SENS.heading=h}}
+ SENS.raw=ax;SENS.last=performance.now();SENS.err=null;
+}
+function getSensorSteer(){
+ if(!sensorMode()||!SENS.on)return null;
+ const range=Math.max(8,Number(SET.sensorRange)||28);
+ const v=SET.control==="twist"?SENS.twist/(range*3):SENS.tilt/range;
+ const c=Math.max(-1,Math.min(1,v));SENS.val=SET.invSensor?-c:c;return SENS.val;
+}
+async function enableSensors(quiet){
+ const DOE=window.DeviceOrientationEvent;
+ if(!DOE){SENS.err="Sensori non disponibili su questo browser";updateSensorUI();return false}
+ try{
+  if(typeof DOE.requestPermission==="function"){const r=await DOE.requestPermission();if(r!=="granted"){SENS.err="Permesso sensori negato";updateSensorUI();return false}}
+  if(!SENS.on){addEventListener("deviceorientation",onOrientation,true);SENS.on=true}
+  calibrateSensor();SENS.err=null;updateSensorUI();
+  if(!quiet)flashMsg("SENSORI ATTIVI · TENI IL TELEFONO DRITTO","gm ok");
+  return true;
+ }catch(err){SENS.err="Errore sensori: "+(err&&err.message||err);updateSensorUI();return false}
+}
+function updateSensorUI(){
+ const b=document.getElementById("s_sensor");if(b)b.textContent=SENS.on?"📱 Ricalibra sensori":"📱 Attiva sensori";
+ const s=document.getElementById("s_sensorst");if(s)s.textContent=SENS.err||(SENS.on?"Sensori attivi · inclina/ruota per sterzare":"Su iPhone/iPad serve toccare “Attiva sensori”");
+}
+
 /* ---------- ghost / sectors ---------- */
 function ghostPos(tc){
  const s=ghost&&ghost.s;if(!s||s.length<2||tc>=s[s.length-1][4])return null;
@@ -398,7 +434,8 @@ function step(dt){
  if(msgT>0){msgT-=dt;if(msgT<=0){$("#msg").textContent="";$("#msg").className=""}}
  const racing=state==="race";if(racing)raceT+=dt;
  const inp={thr:racing&&(input.thr||keys.ArrowUp||keys.KeyW),brk:0,hb:racing&&(input.hb||keys.Space)};
- const sT=wheelId!==null?wheelVal:((keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0));
+ const sen=getSensorSteer();
+ const sT=sen!==null?sen:(wheelId!==null?wheelVal:((keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)));
  me.st+=(sT-me.st)*Math.min(1,dt*14);
  const ak=Math.abs(me.lat),hw=S.hw;
  me.wet=S.F.some(f=>me.idx>=f[0]&&me.idx<=f[1])&&ak<hw+30;
@@ -624,24 +661,25 @@ function adapt(dt){adA+=dt;adN++;if(adA>1.2){const m=adA/adN;adA=0;adN=0;if(m>.0
  if(state==="race"&&!adAuto&&adPR<=.71&&m>.034)adLow++;else if(m<.03)adLow=0;
  if(adLow>=4&&!adAuto){adAuto=true;SET.shadows=false;SET.quality="perf";try{if(ENVI)ENVI.setShadows(false)}catch(e){}flashMsg("QUALITÀ RIDOTTA PER FLUIDITÀ","gm")}}}
 /* --- impostazioni, copilota, meteo, musica --- */
-let SET=Object.assign({fps:false,voice:true,music:true,shadows:true,weather:"auto",time:"auto",quality:"high",bright:1,steer:90},(()=>{try{return JSON.parse(localStorage.getItem("rally3dset")||"{}")}catch(e){return{}}})());
+let SET=Object.assign({fps:false,voice:true,music:true,shadows:true,weather:"auto",time:"auto",quality:"high",bright:1,steer:90,control:"sensor",sensorRange:28,invSensor:false},(()=>{try{return JSON.parse(localStorage.getItem("rally3dset")||"{}")}catch(e){return{}}})());
 const saveSet=()=>{try{localStorage.setItem("rally3dset",JSON.stringify(SET))}catch(e){}};
 let RAIN=false,rainP=null,copS=null,copI=0,copL=[],noteEl=null;
 {const b=document.getElementById("cfg");
  const p=document.createElement("div");p.id="cfgp";
  p.innerHTML='<div class="sw"><div class="sh"><span class="stt">Impostazioni</span><label class="fpsl"><span>Mostra FPS</span><input type="checkbox" id="s_fps"></label><button id="s_ok" class="btn go">Chiudi</button></div><div class="sg">'
  +'<section><h3>Audio</h3><label><span>Audio generale</span><input type="checkbox" id="s_snd"></label><label><span>Copilota (voce)</span><input type="checkbox" id="s_voice"></label><label><span>Musica</span><input type="checkbox" id="s_music"></label></section>'
- +'<section><h3>Guida</h3><label><span>Vista</span><select id="s_cam"><option value="0">Inseguimento</option><option value="1">Cofano</option><option value="2">Paraurti</option></select></label><label><span>Cofano visibile</span><select id="s_hood"><option value="0">Bassa</option><option value="1">Media</option><option value="2">Alta</option></select></label><label class="rg"><span>Sensibilità sterzo</span><input type="range" id="s_steer" min="60" max="150" step="5"></label><button id="s_fs" class="btn g">⛶ Schermo intero</button></section>'
+ +'<section><h3>Guida</h3><label><span>Vista</span><select id="s_cam"><option value="0">Inseguimento</option><option value="1">Cofano</option><option value="2">Paraurti</option></select></label><label><span>Modalità sterzo</span><select id="s_control"><option value="sensor">Sensore · inclina</option><option value="twist">Sensore · ruota</option><option value="touch">Touch / tastiera</option></select></label><label class="rg"><span>Corsa sensore</span><input type="range" id="s_srange" min="12" max="60" step="2"></label><label><span>Inverti sensore</span><input type="checkbox" id="s_invs"></label><button id="s_sensor" class="btn g">📱 Attiva sensori</button><small id="s_sensorst"></small><label><span>Cofano visibile</span><select id="s_hood"><option value="0">Bassa</option><option value="1">Media</option><option value="2">Alta</option></select></label><label class="rg"><span>Sensibilità sterzo touch</span><input type="range" id="s_steer" min="60" max="150" step="5"></label><button id="s_fs" class="btn g">⛶ Schermo intero</button></section>'
  +'<section><h3>Grafica</h3><label><span>Qualità</span><select id="s_q"><option value="high">Alta</option><option value="perf">Prestazioni</option></select></label><label><span>Ombre</span><input type="checkbox" id="s_shadows"></label><label class="rg"><span>Luminosità</span><input type="range" id="s_b" min="0.7" max="2" step="0.05"></label></section>'
  +'<section><h3>Ambiente</h3><label><span>Meteo</span><select id="s_weather"><option value="auto">Automatico</option><option value="clear">Sereno</option><option value="rain">Pioggia</option></select></label><label><span>Ora</span><select id="s_time"><option value="auto">Automatica</option><option value="day">Giorno</option><option value="dusk">Tramonto</option><option value="night">Notte</option></select></label><small>Meteo e ora si applicano alla prossima prova.</small></section>'
  +'</div></div>';
  document.body.appendChild(p);const g=id=>p.querySelector("#"+id);
- const sync=()=>{g("s_snd").checked=!muted;g("s_fps").checked=!!SET.fps;g("s_voice").checked=SET.voice;g("s_music").checked=SET.music;g("s_shadows").checked=SET.shadows;g("s_weather").value=SET.weather;g("s_time").value=SET.time;g("s_steer").value=SET.steer;g("s_q").value=SET.quality;g("s_b").value=SET.bright;g("s_cam").value=String((SET.cam|0)%3);g("s_hood").value=String(cl3(SET.hoodVis|0,0,2))};
+ const sync=()=>{g("s_snd").checked=!muted;g("s_fps").checked=!!SET.fps;g("s_voice").checked=SET.voice;g("s_music").checked=SET.music;g("s_shadows").checked=SET.shadows;g("s_weather").value=SET.weather;g("s_time").value=SET.time;g("s_steer").value=SET.steer;g("s_control").value=SET.control||"sensor";g("s_srange").value=SET.sensorRange||28;g("s_invs").checked=!!SET.invSensor;g("s_q").value=SET.quality;g("s_b").value=SET.bright;g("s_cam").value=String((SET.cam|0)%3);g("s_hood").value=String(cl3(SET.hoodVis|0,0,2));updateSensorUI()};
  b.onclick=()=>{uiSnd("ui");sync();p.style.display="flex"};
  g("s_ok").onclick=()=>{uiSnd("ui");p.style.display="none"};
  g("s_fs").onclick=()=>{uiSnd("ui");$("#fs").click()};
- p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value};
- p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;SET.steer=+g("s_steer").value;SET.quality=g("s_q").value;saveSet();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
+  g("s_sensor").onclick=()=>{uiSnd("ui");enableSensors(false)};
+ p.oninput=e=>{if(e.target.id==="s_b")SET.bright=+e.target.value;if(e.target.id==="s_srange")SET.sensorRange=+e.target.value};
+ p.onchange=e=>{if(e.target.id==="s_snd"&&g("s_snd").checked===muted)$("#snd").click();SET.cam=cl3(+g("s_cam").value|0,0,2);cam3m=SET.cam;SET.hoodVis=cl3(+g("s_hood").value|0,0,2);SET.bright=+g("s_b").value;SET.voice=g("s_voice").checked;SET.fps=g("s_fps").checked;SET.music=g("s_music").checked;bgmMute();if(SET.music&&!bgmOK)playBgm();SET.shadows=g("s_shadows").checked;SET.weather=g("s_weather").value;SET.time=g("s_time").value;SET.steer=+g("s_steer").value;const oldC=SET.control;SET.control=g("s_control").value||"sensor";SET.sensorRange=+g("s_srange").value||28;SET.invSensor=g("s_invs").checked;if(SET.control!==oldC)calibrateSensor();if(sensorMode()&&!SENS.on)enableSensors(true);SET.quality=g("s_q").value;saveSet();updateSensorUI();uiSnd("ui");if(ENVI){ENVI.setShadows(SET.shadows);const w=SET.quality==="perf"?"PERFORMANCE":"HIGH";if(ENVI.preset!==w){ENVI.setPreset(w);bS=null}}if(!SET.voice&&window.speechSynthesis)speechSynthesis.cancel()}}
 const GR={hair:["tornante",1],vh:["uno",1],c90:["due",2],sweep:["quattro, largo",4],kink:["cinque, leggera",5],chic:["doppia, tre",3]};
 function noteInfo(n){const P=S.P,a=i=>Math.atan2(P[i].ny,P[i].nx),m=Math.min(S.N-1,Math.max(n.i0+1,Math.round((n.i0+n.i1)/2)));let d=a(m)-a(n.i0);d=Math.atan2(Math.sin(d),Math.cos(d));return{right:d>0}}
 function say(t){if(!SET.voice||!window.speechSynthesis||muted)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="it-IT";u.rate=1.15;u.volume=1;u.pitch=1;speechSynthesis.speak(u)}catch(e){}}

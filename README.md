@@ -10,7 +10,7 @@ Gioco di rally in terza persona sui passi alpini, con la giocabilità originale 
 - Pubblicazione: vedi `GUIDA_GITHUB_DESKTOP.md`.
 
 ## Controlli
-Touch (orizzontale): pedale gas e freno a mano a sinistra, volante a destra (posizione orizzontale del dito, fondo corsa a 90 px, regolabile in ⚙). Tastiera: frecce/WASD e barra spaziatrice per il freno a mano. 🎥 cambia vista (chase, cofano, paraurti), ⚙ apre le impostazioni (voce, musica, ombre, meteo, ora, qualità, sterzo).
+🇮🇹 **Sterzo con sensori del telefono (impostazione predefinita)**: in ⚙ → Guida scegli `Sensore · inclina` (tieni il telefono in orizzontale e inclinalo a sinistra/destra) oppure `Sensore · ruota` (ruota il telefono come un volante). Tocca **Attiva sensori** su iPhone/iPad per concedere il permesso; la posizione viene ricalibrata all'inizio di ogni prova. Gas e freno a mano restano i pulsanti touch a sinistra. `Touch / tastiera` ripristina il vecchio volante a destra (posizione del dito, fondo corsa regolabile) e WASD/frecce. 🎥 cambia vista, ⚙ apre le impostazioni.
 
 ## Ambientazioni (`src/themes.js`)
 `alpine` (tornanti in quota), `forest` (foresta nordica con nebbia), `canyon` (gradoni rossi, arbusti), `coast` (scogliera sul mare), `autumn` (colline con alberi d'autunno). Ogni prova sceglie `alp.th` in `ST`; le ambientazioni diverse da `alpine` usano percorsi sinuosi (`road.style:'meander'`).
